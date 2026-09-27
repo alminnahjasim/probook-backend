@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipts & Payments - Service Book ERP</title>
+
+    <script>
+        const savedTheme = localStorage.getItem('erp_theme') || 'slate';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        .select2-container { width: 100% !important; }
+        .select2-container .select2-selection--single { height: 40px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; display: flex; align-items: center; }
+        .select2-selection__arrow { height: 38px !important; }
+        /* ================= THEME VARIABLES ================= */
+        :root, [data-theme="slate"] { --bg-body: #e0f2fe; --page-title: #1f2937; --btn-primary: #1f2937; }
+        [data-theme="obsidian"] { --bg-body: #f8fafc; --page-title: #0f172a; --btn-primary: #0f172a; }
+        [data-theme="corporate"] { --bg-body: #f1f5f9; --page-title: #1e3a8a; --btn-primary: #1e3a8a; }
+        [data-theme="emerald"] { --bg-body: #ecfdf5; --page-title: #065f46; --btn-primary: #064e3b; }
+        [data-theme="royal"] { --bg-body: #f5f3ff; --page-title: #3730a3; --btn-primary: #312e81; }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-body); margin: 0; padding: 20px; color: #333; transition: background-color 0.3s; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; align-items: center; margin-bottom: 20px; }
+        .header h2 { color: var(--page-title); margin: 0; font-weight: 800; text-transform: uppercase; transition: color 0.3s; }
+        .back-btn { background-color: #e2e8f0; color: #333; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; margin-right: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); transition: all 0.3s ease; }
+        .card-title { color: var(--page-title); font-size: 16px; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; transition: color 0.3s; display: flex; justify-content: space-between; align-items: center; }
+        .form-row { display: flex; gap: 20px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
+        label { font-size: 12px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        input, select, textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; outline: none; }
+        .btn-primary { background-color: var(--btn-primary); color: white; padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: opacity 0.3s; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-minimize { background: none; border: none; font-size: 24px; font-weight: bold; color: #64748b; cursor: pointer; padding: 0 10px; display: flex; align-items: center; justify-content: center; height: 30px; width: 30px; border-radius: 4px; }
+        .btn-minimize:hover { color: #1e293b; background-color: #f1f5f9; }
+        .toolbar { background-color: white; border-radius: 8px; padding: 15px 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; background-color: #f8fafc; }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+        th { background-color: #f8fafc; padding: 12px 10px; font-size: 13px; border-bottom: 2px solid #e2e8f0; color: #475569; }
+        td { padding: 12px 10px; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+        .badge-green { background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-red { background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; margin-bottom: 20px; }
+        .pagination-controls select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-weight:bold; color:var(--page-title); width: 80px;}
+        .pagination-controls button { padding: 4px 10px; margin-left: 5px; cursor: pointer; border: 1px solid #cbd5e1; background: white; border-radius: 4px; font-weight: bold; color: #333; transition: 0.2s;}
+        .pagination-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination-controls button:not(:disabled):hover { background: #e2e8f0; }
+
+        #printLayer { display: none; background: white; width: 100%; min-height: 100vh; position: absolute; top: 0; left: 0; z-index: 9999; padding: 40px; box-sizing: border-box; }
+        @media print {
+            body>.container { display: none !important; }
+            body>.modal { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            #printLayer { display: block !important; position: static; padding: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 450px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-height: 90vh; overflow-y: auto; }
+        .btn-cancel { background-color: white; border: 1px solid #cbd5e1; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #333; }
+        .row-completed td { background-color: #dcfce7 !important; }
+        .history-log { margin-top: 15px; border-left: 2px solid #cbd5e1; padding-left: 15px; }
+        .history-item { margin-bottom: 15px; position: relative; }
+        .history-item::before { content: ''; position: absolute; left: -21px; top: 0; width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; }
+        .history-date { font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 2px; }
+        .history-desc { font-size: 13px; color: #333; }
+    </style>
+</head>
+<body>
+<script>
+/* Hydrate company print settings + logo from the server (the source of truth) into
+   localStorage, so saved settings persist across devices/users and the existing
+   print code (which reads localStorage) keeps working. Only overrides when the
+   server actually has saved settings, preserving any legacy local-only settings. */
+try {
+  var _srvPrintSettings = {{ (current_company.print_settings if current_company and current_company.print_settings else '')|tojson|safe }};
+  if (_srvPrintSettings) { localStorage.setItem('erp_print_settings', _srvPrintSettings); } else { localStorage.removeItem('erp_print_settings'); }
+  try { window.CURRENCY_SYMBOL = {{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$')|tojson|safe }}; } catch(e) { window.CURRENCY_SYMBOL = '$'; }
+  try { window.CURRENCY_DECIMALS = {{ (current_company.currency_decimals if current_company and current_company.currency_decimals is not none else 2)|tojson|safe }}; } catch(e) { window.CURRENCY_DECIMALS = 2; }
+  try { window.CURRENCY_CODE = {{ (current_company.currency_code if current_company and current_company.currency_code else '')|tojson|safe }}; } catch(e) { window.CURRENCY_CODE = ''; }
+} catch (e) {}
+</script>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← Dashboard</a>
+            <h2>Receipts & Payments (Cash Book)</h2>
+        </div>
+
+        <div class="card" id="topTransactionCard">
+            <div class="card-title">➕ Record New Transaction</div>
+            {% if form_error %}
+            <div style="background:#fee2e2; border:1px solid #ef4444; color:#991b1b; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-weight:bold;">⚠️ {{ form_error }}</div>
+            {% endif %}
+            <form method="POST" action="/save_receipt" onsubmit="return handleTransactionSubmit(event)">
+                <input type="hidden" name="edit_id" id="editTxnId" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Transaction Type *</label>
+                        <select name="txn_category" id="txnCategory" onchange="toggleTxnFields()" required>
+                            <option value="">-- Select Type --</option>
+                            <optgroup label="Money IN (Receipts)">
+                                <option value="receipt">🧾 Customer Payment (Against Invoice)</option>
+                                <option value="advance_receipt">🪙 Customer Advance / Deposit</option>
+                                <option value="refund_supplier">↩️ Refund Received from Supplier</option>
+                                <option value="occupancy_billing">🏢 Occupancy Billing</option>
+                                <option value="misc_income">💵 Miscellaneous Income</option>
+                                <option value="adjustment_invoice">🔄 Adjustment Invoice (Use Credit)</option>
+                                <option value="money_receipt" style="color:#0f766e; font-weight:bold;" title="Money comes in as Cash, Petty Cash or into a Capital / Loan account, but it is NOT income">💰 Money Receipt (Not Income)</option>
+                            </optgroup>
+                            <optgroup label="Money OUT (Payments)">
+                                <option value="payment">🏭 Supplier Payment</option>
+                                <option value="advance_payment">📤 Supplier Advance</option>
+                                <option value="refund_customer">↪️ Refund Paid to Customer</option>
+                                <option value="fleet_expenses">🚗 Fleet Expenses</option>
+                                <option value="misc_expense">🧾 Miscellaneous Expenses</option>
+                                <option value="property_opex">🏠 Property Operating Expenses</option>
+                                <option value="salary_payment">👥 Salary Payment</option>
+                                <option value="payout" style="color:#b45309; font-weight:bold;" title="Money leaves through the selected payment mode but is NOT recorded as an expense">💸 Payout (Not an Expense)</option>
+                            </optgroup>
+                            <optgroup label="Contra / Internal Transfer">
+                                <option value="cash_to_bank">🔁 Cash to Bank (Deposit)</option>
+                                <option value="bank_to_cash">🔁 Bank to Cash (Withdrawal)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <!-- Appears only for a grouped head (Occupancy Billing / Fleet Expenses / Property
+                         Operating Expenses) and carries the actual category the server records. -->
+                    <div class="form-group" id="subCategoryGroup" style="display:none;">
+                        <label id="subCategoryLabel" style="color:#059669;">Type *</label>
+                        <select name="txn_sub_category" id="txnSubCategory" onchange="toggleTxnFields()" style="border-color:#059669; font-weight:bold;"></select>
+                    </div>
+                    <div class="form-group" id="amountGroup">
+                        <label id="amountLabel">Amount *</label>
+                        <input type="number" name="amount" id="txnAmount" step="0.01" required placeholder="0.00" oninput="calculateAdjustment()" style="border:2px solid #16a34a !important; box-shadow:0 0 0 1px rgba(22,163,74,.12);">
+                    </div>
+                    <div class="form-group" id="paymentModeGroup">
+                        <label>Payment Mode *</label>
+                        <select name="payment_mode" id="paymentMode" onchange="toggleChequeFields()" required>
+                            <option value="Cash">Cash</option>
+                            <option value="Petty Cash">Petty Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="POS Payment">POS Payment</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Capital/Loan Account">Capital / Loan Account</option>
+                            <option value="On A/C">On A/C</option>
+                            <option value="Adjustment" id="adjMode" style="display:none;">Account Adjustment</option>
+                        </select>
+                        <div id="moneyReceiptModeHint" style="display:none; font-size:12px; color:#b45309; margin-top:6px;">Money Receipt accepts <b>Cash</b>, <b>Petty Cash</b> or <b>Capital / Loan Account</b> only.</div>
+                    </div>
+                    <div class="form-group" style="max-width:210px; margin-left:auto;">
+                        <label>Transaction Date *</label>
+                        <div style="position:relative; height:40px;">
+                            <input type="text" name="transaction_date" id="txnDate" required readonly maxlength="10" placeholder="DD/MM/YYYY" title="Click to choose a date" style="height:40px; padding-right:42px; width:100%; box-sizing:border-box; border:1px solid #cbd5e1; color:#333; background:#fff; font-weight:600; cursor:pointer;">
+                            <span aria-hidden="true" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:18px; pointer-events:none;">📅</span>
+                            <input type="date" id="txnDatePicker" aria-label="Choose Transaction Date" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:2;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shown only when the money moves through a Capital / Loan account -->
+                <div class="form-row" id="capitalAccountDiv" style="display:none;">
+                    <div class="form-group" style="flex:2;">
+                        <label style="color:#0f766e;">Select Capital / Loan Account Holder *</label>
+                        <select name="capital_account_id" id="capitalAccountSelect" style="border-color:#0d9488; font-weight:bold; color:#0f766e;">
+                            <option value="">-- Choose Account Holder --</option>
+                            {% for cap in capital_accounts %}
+                            <option value="{{ cap.id }}">{{ cap.name }}{% if cap.phone %} — {{ cap.phone }}{% endif %} ({{ cap.account_type or 'Capital' }}) | Bal: {{ "{:,.2f}".format(cap.balance or 0) }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not capital_accounts %}
+                        <div style="font-size:12px; color:#b45309; margin-top:6px;">No capital / loan accounts yet — add one under <a href="/accounts" style="color:#0d9488; font-weight:bold;">Master Accounts → Capital / Loan Accounts</a>.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row" id="chequeFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Cheque Number *</label>
+                        <input type="text" name="cheque_number" id="txnChequeNo" placeholder="Enter cheque number">
+                    </div>
+                    <div class="form-group">
+                        <label>Cheque Date *</label>
+                        <input type="date" name="cheque_date" id="txnChequeDate">
+                    </div>
+                </div>
+
+                <div class="form-row" id="bankTransferDiv" style="display:none;">
+                    <div class="form-group" style="flex:2;">
+                        <label style="color:#1e3a8a;" id="bankSelectLabel">Select Source Bank Account (Payer) *</label>
+                        <select name="bank_account_id" id="bankAccountSelect" style="border-color:#1e3a8a; font-weight:bold; color:#1e3a8a;">
+                            <option value="">-- Choose Bank / Card --</option>
+                            {% for b in bank_accounts %}
+                            <option value="{{ b.id }}">{{ b.bank_name }}{% if b.card_ref %} — {{ b.card_ref }}{% endif %}{% if b.account_number%} ({{ b.account_number }}){% endif %} | Bal: {{ "{:,.2f}".format(b.balance) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label style="color:#1e3a8a;">Bank Reference No.</label>
+                        <input type="text" name="bank_ref_number" placeholder="e.g. TXN123456789">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" id="customerDiv" style="display:none;">
+                        <label>Select Customer *</label>
+                        <select name="customer_id" id="customerSelect" onchange="fetchInvoices()">
+                            <option value="">-- Choose Customer --</option>
+                            {% for c in customers %}<option value="{{ c.id }}" data-balance="{{ c.balance }}">{{ c.name }} (Bal: {{ c.balance }})</option>{% endfor %}
+                        </select>
+                        <div id="customerBalanceAlert" style="display:none; padding:10px; border-radius:6px; font-size:13px; font-weight:bold; margin-top:10px; border:1px solid;"></div>
+                    </div>
+                    
+                    <div class="form-group" id="supplierDiv" style="display:none;">
+                        <label id="supplierLabel">Select Supplier *</label>
+                        <select name="supplier_id" id="supplierSelect" onchange="fetchInvoices()">
+                            <option value="">-- Choose Supplier --</option>
+                            {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }} (Bal: {{ s.balance }})</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="emiBankDiv" style="display:none;">
+                        <label style="color:#1e3a8a;">Select Financing Bank (Payee) *</label>
+                        <select name="emi_bank_id" id="emiBankSelect" style="border-color:#1e3a8a;">
+                            <option value="">-- Choose Target Bank / Loan A/C --</option>
+                            {% for b in bank_accounts %}<option value="{{ b.id }}">{{ b.bank_name }}{% if b.account_number %} ({{ b.account_number }}){% endif %} | Bal: {{ "{:,.2f}".format(b.balance) }}</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="staffDiv" style="display:none;">
+                        <label>Select Staff Member *</label>
+                        <select name="staff_id" id="staffSelect">
+                            <option value="">-- Choose Staff --</option>
+                            {% for s in staff_members %}<option value="{{ s.id }}">{{ s.full_name or s.username }} ({{ s.role }})</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" id="assetDiv" style="display:none; background:#f8fafc; padding:15px; border-radius:6px; border:1px dashed #cbd5e1; margin-bottom:15px;">
+                    <div class="form-group" id="vehicleDiv" style="display:none;">
+                        <label style="color:#1e3a8a;" id="vehicleLabel">Select Vehicle (If Applicable)</label>
+                        <select name="vehicle_id" id="vehicleSelect">
+                            <option value="">-- No Vehicle / General --</option>
+                            {% for v in vehicles %}<option value="{{ v.id }}">{{ v.name }} - {{ v.registration_number }} | Loan Bal: {{ "{:,.2f}".format(v.total_loan_balance) }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" id="roomDiv" style="display:none;">
+                        <label style="color:#059669;" id="roomLabel">Select Room / Flat (If Applicable)</label>
+                        <select name="room_id" id="roomSelect">
+                            <option value="">-- No Room / General --</option>
+                            {% for r in rooms %}
+                            {% set bldg_name = namespace(val="Unknown") %}
+                            {% for b in buildings %}{% if b.id == r.building_id %}{% set bldg_name.val = b.name %}{% endif %}{% endfor %}
+                            <option value="{{ r.id }}">{{ bldg_name.val }} - Room {{ r.room_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="invoiceAllocationDiv" style="display:none; margin-bottom:15px; background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #cbd5e1;">
+                    <label style="color:#1e3a8a;" id="allocationTitleLabel">Allocate to Pending Invoices / Bills</label>
+                    <div id="allocSummaryBar" style="display:none; margin:8px 0 12px; padding:10px 12px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; font-size:13px;">
+                        <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <span>Total Amount: <b id="allocTotalAmt">0.00</b></span>
+                            <span>Allocated: <b id="allocAppliedAmt" style="color:#2563eb;">0.00</b></span>
+                            <span>Remaining to Adjust: <b id="allocRemainingAmt" style="color:#b45309;">0.00</b></span>
+                        </div>
+                        <div id="allocStatusMsg" style="margin-top:6px; font-weight:bold; color:#64748b;"></div>
+                    </div>
+                    <table id="invoiceTable">
+                        <thead><tr><th>Ref ID</th><th>Date</th><th>Total Due</th><th>Balance Due</th><th>Apply Amount</th></tr></thead>
+                        <tbody id="invoiceListBody"><tr><td colspan="5" style="text-align:center;">Select a Customer or Supplier to view pending records.</td></tr></tbody>
+                    </table>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Remarks / Notes</label>
+                        <input id="remarksInput" type="text" name="remarks" placeholder="Reference No, Cheque No, or Details..." value="{{ default_remarks if default_remarks else '' }}">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap:10px;">
+                    <button type="button" class="btn-cancel" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
+                    <button type="submit" class="btn-primary" id="saveTxnBtn">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" id="ledgerCardWrapper">
+            <div class="card-title">
+                <span>📖 Recent Transactions Ledger</span>
+                <button type="button" class="btn-minimize" onclick="toggleLedger()" title="Minimize/Expand" id="ledgerToggleBtn">-</button>
+            </div>
+
+            <div id="ledgerContent">
+                <div class="toolbar" style="padding: 10px; margin-bottom: 15px; background: #f8fafc;">
+                    <div class="filter-group">
+                        <input type="text" id="searchLedger" placeholder="🔍 Search Txn, Details..." onkeyup="filterLedger()" style="width: 250px;">
+                        <input type="date" id="ledgerStartDate" title="From Date" onchange="filterLedger()">
+                        <span style="color: #64748b; font-size: 12px;">to</span>
+                        <input type="date" id="ledgerEndDate" title="To Date" onchange="filterLedger()">
+                        <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:12px;" onclick="document.getElementById('searchLedger').value=''; document.getElementById('ledgerStartDate').value=''; document.getElementById('ledgerEndDate').value=''; filterLedger();">Clear Filter</button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-primary" style="background-color: #10b981; padding:6px 12px; font-size:12px;" onclick="exportTableToCSV('Transactions_Ledger.csv', 'ledgerTable')">📥 Export to Excel</button>
+                    </div>
+                </div>
+
+                <table id="ledgerTable">
+                    <thead><tr><th>Txn ID</th><th>Date &amp; Time</th><th>Receipt No</th><th>Customer / Party</th><th>Details &amp; Remarks</th><th style="text-align:right;">Money IN ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th><th style="text-align:right;">Money OUT ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th><th style="text-align:center;">Action</th></tr></thead>
+                    <tbody>
+                        {% for r in receipts %}
+                        <tr data-mode="{{ r.payment_mode or 'Other' }}" data-amount="{{ r.amount }}">
+                            <td>#{{ r.id }}</td>
+                            <td>{{ r.date_created.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td style="font-weight:bold; color:#1e3a8a;"><a href="javascript:void(0)" onclick="openRecordView('/api/receipt_view/{{ r.id }}')" style="color:inherit; text-decoration:underline; cursor:pointer;" title="View transaction details (read-only)">{{ r.receipt_number if r.receipt_number else 'RCP-' ~ r.id }}</a></td>
+                            {% set ename = '' %}
+                            {% set etype = '' %}
+                            {% if r.customer_id %}{% set ename = customers|selectattr('id','equalto',r.customer_id)|map(attribute='name')|first %}{% set etype = 'customer' %}
+                            {% elif r.supplier_id %}{% set ename = suppliers|selectattr('id','equalto',r.supplier_id)|map(attribute='name')|first %}{% set etype = 'supplier' %}{% endif %}
+                            <td>
+                                {% if ename and etype == 'customer' %}<span style="font-weight:bold; color:#1e293b;">👤 {{ ename }}</span>
+                                {% elif ename and etype == 'supplier' %}<span style="font-weight:bold; color:#7c3aed;">🏢 {{ ename }}</span>
+                                {% else %}<span style="color:#94a3b8;">— General —</span>{% endif %}
+                            </td>
+                            <td style="font-weight:bold;">
+                                {{ r.transaction_type }}
+                            </td>
+                            {% if 'Adjustment Invoice' in r.transaction_type %}
+                                <td colspan="2" style="text-align:center; color:#f59e0b; font-style:italic;">Adjusted via Credit</td>
+                            {% else %}
+                                <td style="text-align:right;">{% if r.amount > 0 %}<span class="badge-green">{{ "{:,.2f}".format(r.amount) }}</span>{% else %}-{% endif %}</td>
+                                <td style="text-align:right;">{% if r.amount < 0 %}<span class="badge-red">{{ "{:,.2f}".format(r.amount|abs) }}</span>{% else %}-{% endif %}</td>
+                            {% endif %}
+                            
+                            <td style="text-align:center; min-width:200px; display:flex; gap:5px; justify-content:center; align-items:center;">
+                                <button type="button" style="padding: 4px 8px; font-size: 11px; background-color: #475569; border: none; cursor: pointer; color:white; border-radius:4px;" title="View Transaction History" onclick="viewTransactionHistory('{{ r.id }}', '{{ r.date_created.strftime('%Y-%m-%d %H:%M') }}')">👁️</button>
+                                <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 11px; background-color: #3b82f6; border: none; cursor: pointer; border-radius:4px;" data-id="{{ r.id }}" data-docnum="{{ r.receipt_number if r.receipt_number else 'RCP-' ~ r.id }}" data-type="{{ r.transaction_type }}" data-amount="{{ r.amount }}" data-date="{{ r.date_created.strftime('%Y-%m-%d') }}" data-remarks="{{ r.remarks or '' }}" data-category="{{ r.category or '' }}" data-mode="{{ r.payment_mode or '' }}" data-cheque="{{ r.cheque_number or '' }}" data-chequedate="{{ r.cheque_date.strftime('%Y-%m-%d') if r.cheque_date else '' }}" data-bankname="{% if r.bank_account_id %}{{ (bank_accounts|selectattr('id','equalto',r.bank_account_id)|map(attribute='bank_name')|first) or '' }}{% endif %}" data-capitalname="{% if r.capital_account_id %}{{ (capital_accounts|selectattr('id','equalto',r.capital_account_id)|map(attribute='name')|first) or '' }}{% endif %}" data-entity="{% if r.customer_id %}{{ customers|selectattr('id','equalto',r.customer_id)|map(attribute='name')|first }}{% elif r.supplier_id %}{{ suppliers|selectattr('id','equalto',r.supplier_id)|map(attribute='name')|first }}{% else %}General{% endif %}" onclick="triggerPrintFromData(this)">🖨️</button>
+                                <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 11px; background-color: #f59e0b; border: none; cursor: pointer; border-radius:4px;" data-id="{{ r.id }}" data-date="{{ r.date_created.strftime('%Y-%m-%d') }}" data-category="{{ r.category or '' }}" data-type="{{ r.transaction_type }}" data-amount="{{ r.amount }}" data-mode="{{ r.payment_mode }}" data-remarks="{{ r.remarks or '' }}" data-cust="{{ r.customer_id or '' }}" data-sup="{{ r.supplier_id or '' }}" data-veh="{{ r.vehicle_id or '' }}" data-room="{{ r.room_id or '' }}" data-staff="{{ r.staff_id or '' }}" data-bank="{{ r.bank_account_id or '' }}" data-capital="{{ r.capital_account_id or '' }}" data-cheque="{{ r.cheque_number or '' }}" data-chequedate="{{ r.cheque_date.strftime('%Y-%m-%d') if r.cheque_date else '' }}" onclick="editTransactionFromBtn(this)">✏️</button>
+                                <form action="/delete_receipt/{{ r.id }}" method="POST" style="margin:0;">
+                                    <button type="submit" class="btn-primary" style="padding: 4px 8px; font-size: 11px; background-color: #ef4444; border: none; cursor: pointer; border-radius:4px;" onclick="return confirm('Are you sure you want to permanently delete this transaction? This will reverse any balances.')">❌</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="8" style="text-align:center;">No transactions recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight:bold; background:#f1f5f9; border-top:2px solid #cbd5e1;">
+                            <td colspan="5" style="text-align:right;">TOTAL (filtered)</td>
+                            <td style="text-align:right; color:#10b981;" id="led-tot-in">0.00</td>
+                            <td style="text-align:right; color:#ef4444;" id="led-tot-out">0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="ledgerModeBreakdown" style="margin-top:14px; max-width:520px;">
+                    <div style="font-size:12px; font-weight:bold; color:#475569; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Totals by Payment Mode (filtered)</div>
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; border:1px solid #e2e8f0;">
+                        <thead>
+                            <tr style="background:#f1f5f9;">
+                                <th style="text-align:left; padding:6px 10px; border-bottom:1px solid #e2e8f0;">Mode</th>
+                                <th style="text-align:right; padding:6px 10px; border-bottom:1px solid #e2e8f0; color:#10b981;">Money IN ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                                <th style="text-align:right; padding:6px 10px; border-bottom:1px solid #e2e8f0; color:#ef4444;">Money OUT ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerModeBreakdownBody">
+                            <tr><td colspan="3" style="text-align:center; padding:8px; color:#94a3b8;">No transactions.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" id="pagination-ledgerTable">
+                    <div>
+                        <label style="font-size:12px; color:#64748b; font-weight:bold;">Rows per page:</label>
+                        <select onchange="changeRowsPerPage('ledgerTable', this.value)"><option value="50">50</option><option value="100">100</option><option value="all">All</option></select>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <span id="page-info-ledgerTable" style="font-size:12px; color:#64748b; margin-right:10px; font-weight:bold;"></span>
+                        <button type="button" id="prev-btn-ledgerTable" onclick="changePage('ledgerTable', -1)">Prev</button>
+                        <button type="button" id="next-btn-ledgerTable" onclick="changePage('ledgerTable', 1)">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #f59e0b;">
+            <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color: #b45309;">🔄 Refund Tracking Dashboard</span>
+                <button type="button" class="btn-primary" style="padding: 8px 16px; font-size: 13px; background-color: #f59e0b; color: white; border: none;" onclick="toggleRefundForm()">+ New Refund Track</button>
+            </div>
+
+            <div id="newRefundForm" style="display:none; background:#fef3c7; padding:20px; border-radius:8px; border:1px dashed #f59e0b; margin-bottom:20px;">
+                <h4 style="margin-top:0; margin-bottom:15px; color:#92400e; text-transform: uppercase;">Create New Refund Tracking</h4>
+                <form method="POST" action="/save_refund_track">
+                    <div class="form-row">
+                        <div class="form-group"><label>Request Date *</label><input type="date" name="request_date" required></div>
+                        <div class="form-group">
+                            <label>To Whom (Supplier/Airline) *</label>
+                            <select name="supplier_id" required><option value="">-- Choose Supplier --</option>{% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+                        </div>
+                        <div class="form-group">
+                            <label>To Which Customer *</label>
+                            <select name="customer_id" required><option value="">-- Choose Customer --</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Expected Refund from Supplier (IN) *</label><input type="number" name="expected_amount" step="0.01" required placeholder="0.00"></div>
+                        <div class="form-group"><label>Payable Amount to Customer (OUT) *</label><input type="number" name="payable_amount" step="0.01" required placeholder="0.00"></div>
+                        <div class="form-group"><label>Approx. Receivable Date</label><input type="date" name="approx_date"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;"><label>Initial Remarks</label><input type="text" name="remarks" placeholder="E.g., Mailed airline on 12th, waiting for response..."></div>
+                        <div class="form-group" style="flex: 1; justify-content: flex-end; flex-direction: row; align-items: flex-end;">
+                            <button type="button" class="btn-cancel" style="margin-right: 10px;" onclick="toggleRefundForm()">Cancel</button>
+                            <button type="submit" class="btn-primary" style="background-color: #10b981; border:none;">Save Tracking Info</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="toolbar" style="padding: 10px; margin-bottom: 15px; background: #fef3c7; border: 1px dashed #f59e0b;">
+                <div class="filter-group">
+                    <input type="text" id="searchRefund" placeholder="🔍 Search Supplier, Customer..." onkeyup="filterRefunds()" style="width: 250px;">
+                    <input type="date" id="refundStartDate" title="From Date" onchange="filterRefunds()">
+                    <span style="color: #92400e; font-size: 12px; font-weight:bold;">to</span>
+                    <input type="date" id="refundEndDate" title="To Date" onchange="filterRefunds()">
+                    <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:12px; background:white;" onclick="document.getElementById('searchRefund').value=''; document.getElementById('refundStartDate').value=''; document.getElementById('refundEndDate').value=''; filterRefunds();">Clear Filter</button>
+                </div>
+                <div><button type="button" class="btn-primary" style="background-color: #10b981; padding:6px 12px; font-size:12px;" onclick="exportTableToCSV('Refund_Tracking.csv', 'refundTable')">📥 Export to Excel</button></div>
+            </div>
+
+            <table id="refundTable">
+                <thead><tr><th>Req Date</th><th>Supplier</th><th>Customer</th><th style="text-align:right;">Expected</th><th style="text-align:right;">Payable</th><th>Status / Remarks</th><th style="text-align:center;">Action</th></tr></thead>
+                <tbody>
+                    {% for rf in refund_tracks %}
+                    <tr class="{% if rf.is_completed %}row-completed{% endif %}" id="rfRow_{{ rf.id }}">
+                        <td>{{ rf.request_date }}</td><td style="font-weight: bold;">{{ rf.supplier_name }}</td><td style="font-weight: bold;">{{ rf.customer_name }}</td>
+                        <td style="text-align:right; font-weight:bold; color:#059669;">{{ "{:,.2f}".format(rf.expected_amount) }}</td>
+                        <td style="text-align:right; font-weight:bold; color:#dc2626;">{{ "{:,.2f}".format(rf.payable_amount) }}</td>
+                        <td style="font-size: 11px; color: #64748b;" id="statusTd_{{ rf.id }}"><span id="refundStatusBadge_{{ rf.id }}"></span>{{ rf.remarks }}<br><span id="latest_fu_{{ rf.id }}"></span></td>
+                        <td style="text-align:center; min-width: 250px;">
+                            <button type="button" class="btn-primary" style="padding: 6px 8px; font-size: 11px; background-color: #475569; border:none; margin-right: 2px;" onclick="viewRefundHistory('{{ rf.id }}')" title="View History">👁️</button>
+                            <button type="button" class="btn-primary" style="padding: 6px 8px; font-size: 11px; background-color: #8b5cf6; border:none; margin-right: 2px;" onclick="openFollowupModal('{{ rf.id }}')">📝 Follow-up</button>
+                            <button type="button" class="btn-primary" style="padding: 6px 8px; font-size: 11px; background-color: #3b82f6; border:none;" onclick="processReceivedRefund('{{ rf.id }}', '{{ rf.supplier_id }}', '{{ rf.customer_id }}', {{ rf.expected_amount }}, {{ rf.payable_amount }})">✅ Receive & Pay</button>
+                        </td>
+                    </tr>
+                    {% else %}<tr><td colspan="7" style="text-align:center; padding: 20px; color: #94a3b8;">No pending refund requests tracked yet.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination-controls" id="pagination-refundTable">
+                <div><label style="font-size:12px; color:#64748b; font-weight:bold;">Rows per page:</label><select onchange="changeRowsPerPage('refundTable', this.value)"><option value="50">50</option><option value="100">100</option><option value="all">All</option></select></div>
+                <div style="display:flex; align-items:center;"><span id="page-info-refundTable" style="font-size:12px; color:#64748b; margin-right:10px; font-weight:bold;"></span><button type="button" id="prev-btn-refundTable" onclick="changePage('refundTable', -1)">Prev</button><button type="button" id="next-btn-refundTable" onclick="changePage('refundTable', 1)">Next</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="refundFollowupModal" class="modal">
+        <div class="modal-content"><h3 style="color:#8b5cf6; margin-top:0;">📝 Refund Follow-up</h3><input type="hidden" id="fuTrackId">
+            <div class="form-group" style="margin-bottom: 15px;"><label>Contact Method *</label><select id="fuMethod" style="border-color:#8b5cf6;"><option value="Phone Call">📞 Phone Call</option><option value="Email Sent">📧 Email Sent</option><option value="Direct Visit">🚶 Direct Visit</option></select></div>
+            <div class="form-group" style="margin-bottom: 20px;"><label>Follow-up Remarks & Details *</label><textarea id="fuRemarks" rows="4" placeholder="E.g., Spoke to airline manager, refund will be processed by next week..."></textarea></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;"><button type="button" class="btn-cancel" onclick="document.getElementById('refundFollowupModal').style.display='none'">Cancel</button><button type="button" class="btn-primary" style="background-color: #8b5cf6; border:none;" onclick="saveFollowup()">💾 Save Note</button></div>
+        </div>
+    </div>
+
+    <div id="refundHistoryModal" class="modal">
+        <div class="modal-content"><h3 style="color:#475569; margin-top:0;">👁️ Refund Tracking History</h3><div id="refundHistoryContainer" class="history-log"></div><div style="display:flex; justify-content:flex-end; margin-top:20px;"><button type="button" class="btn-cancel" onclick="document.getElementById('refundHistoryModal').style.display='none'">Close</button></div></div>
+    </div>
+
+    <div id="txnHistoryModal" class="modal">
+        <div class="modal-content"><h3 style="color:#1e3a8a; border-bottom:1px solid #cbd5e1; padding-bottom:10px; margin-top:0;">👁️ Transaction Timeline</h3><div id="txnHistoryContainer" class="history-log"></div><div style="display:flex; justify-content:flex-end; margin-top:20px;"><button type="button" class="btn-cancel" onclick="document.getElementById('txnHistoryModal').style.display='none'">Close</button></div></div>
+    </div>
+
+    <div id="printLayoutModal" class="modal">
+        <div class="modal-content" style="background:white; padding:25px; border-radius:8px; width:450px;"><h3 style="color:#1e3a8a; margin-top:0;">🖨️ Select Print Layout</h3><p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Choose the format you want to print for this transaction.</p>
+            <div style="text-align: left; margin-bottom: 20px;"><label style="font-size: 12px; font-weight: bold; color: #333; margin-bottom: 8px; display:block;">Available Layouts</label><select id="printModalSelect" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; font-weight: bold; outline: none; cursor: pointer; color: #1e3a8a;"></select></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;"><button type="button" class="btn-cancel" onclick="document.getElementById('printLayoutModal').style.display='none'" style="background:white; border:1px solid #cbd5e1; padding:8px 15px; border-radius:6px; cursor:pointer;">Cancel</button><button type="button" class="btn-primary" style="background-color: #10b981;" onclick="executePrintFromModal()">Print Now</button></div>
+        </div>
+    </div>
+    <div id="printLayer"></div>
+
+    <script>
+        function logTransactionAction(id, desc) {
+            let db = JSON.parse(localStorage.getItem('erp_txn_history')) || {};
+            if(!db[id]) db[id] = [];
+            const timestamp = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            db[id].unshift({ time: timestamp, desc: desc });
+            localStorage.setItem('erp_txn_history', JSON.stringify(db));
+        }
+
+        function viewTransactionHistory(id, createdDate) {
+            let container = document.getElementById('txnHistoryContainer');
+            let html = '';
+            let db = JSON.parse(localStorage.getItem('erp_txn_history')) || {};
+            if(db[id]) {
+                db[id].forEach(log => { html += `<div class="history-item"><div class="history-date">${log.time}</div><div class="history-desc">${log.desc}</div></div>`; });
+            }
+            if(createdDate) html += `<div class="history-item"><div class="history-date">${createdDate}</div><div class="history-desc"><strong>✅ Transaction Recorded</strong></div></div>`;
+            container.innerHTML = html || '<p style="color:#64748b; font-size:12px;">No historical actions recorded yet.</p>';
+            document.getElementById('txnHistoryModal').style.display = 'flex';
+        }
+
+        function handleTransactionSubmit(e) {
+            const dateEl = document.getElementById('txnDate');
+            const dateValue = (dateEl && dateEl.value || '').trim();
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+                e.preventDefault(); alert('Please enter the transaction date as DD/MM/YYYY.'); if (dateEl) dateEl.focus(); return false;
+            }
+            const dd = parseInt(dateValue.slice(0,2), 10), mm = parseInt(dateValue.slice(3,5), 10), yyyy = parseInt(dateValue.slice(6,10), 10);
+            const testDate = new Date(yyyy, mm - 1, dd);
+            if (testDate.getFullYear() !== yyyy || testDate.getMonth() !== mm - 1 || testDate.getDate() !== dd) {
+                e.preventDefault(); alert('Please enter a valid date in DD/MM/YYYY format.'); if (dateEl) dateEl.focus(); return false;
+            }
+            const type = effectiveTxnType();
+            if (txnHead() === 'money_receipt' && !MONEY_RECEIPT_MODES.includes(document.getElementById('paymentMode').value)) {
+                e.preventDefault(); alert('This is not an appropriate payment mode for a Money Receipt. Use Cash, Petty Cash or Capital / Loan Account.'); return false;
+            }
+            if (['cash_to_bank', 'bank_to_cash'].includes(type)) {
+                const bankId = document.getElementById('bankAccountSelect').value;
+                const amt = parseFloat(document.getElementById('txnAmount').value) || 0;
+                if (!bankId) { e.preventDefault(); alert('Please select a bank account for the transfer.'); return false; }
+                if (amt <= 0) { e.preventDefault(); alert('Please enter an amount greater than 0.'); return false; }
+            }
+            // Allocation integrity for receipts / supplier payments
+            if (['receipt', 'payment'].includes(type)) {
+                const total = parseFloat(document.getElementById('txnAmount').value) || 0;
+                let applied = 0;
+                document.querySelectorAll('input[name="apply_amount[]"]').forEach(i => applied += (parseFloat(i.value) || 0));
+                applied = Math.round(applied * 100) / 100;
+                const remaining = Math.round((total - applied) * 100) / 100;
+                if (remaining < -0.01) {
+                    e.preventDefault();
+                    alert(`Allocated amount (${applied.toFixed(window.CURRENCY_DECIMALS)}) exceeds the transaction amount (${total.toFixed(window.CURRENCY_DECIMALS)}). Please reduce the allocation before saving.`);
+                    return false;
+                }
+                if (remaining > 0.01 && applied > 0) {
+                    const credit = (type === 'payment') ? 'a supplier advance / credit' : 'a customer advance / credit';
+                    const item = (type === 'payment') ? 'bill' : 'invoice';
+                    if (!confirm(`${remaining.toFixed(window.CURRENCY_DECIMALS)} is not allocated to any specific ${item}.\n\nThis remaining amount will be saved as ${credit} on the account.\n\nContinue?`)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            }
+            const isEdit = document.getElementById('editTxnId').value !== "";
+            const id = isEdit ? document.getElementById('editTxnId').value : "NEW";
+            logTransactionAction(id, isEdit ? "Updated Transaction Details" : "Saved New Transaction");
+            // Arm the pending refund step the moment its matching transaction is actually saved.
+            // The step is finalized (marked complete + reference number assigned) after the page
+            // reloads, in the DOMContentLoaded handler below.
+            try {
+                const pend = JSON.parse(localStorage.getItem('erp_pending_refund_step') || 'null');
+                if (pend && !isEdit && type === pend.expectType) {
+                    pend.armed = true;
+                    localStorage.setItem('erp_pending_refund_step', JSON.stringify(pend));
+                }
+            } catch (err) {}
+            forceInvoiceRefresh();
+            return true;
+        }
+
+        function forceInvoiceRefresh() { setTimeout(fetchInvoices, 500); }
+
+        const tableState = {};
+        const paginatedTables = ['ledgerTable', 'refundTable'];
+        function initPagination() { paginatedTables.forEach(id => { let table = document.getElementById(id); if(!table) return; tableState[id] = { page: 1, rowsPerPage: 50 }; renderPage(id); }); }
+        function renderPage(tableId) {
+            if(!tableState[tableId]) return;
+            let table = document.getElementById(tableId);
+            let state = tableState[tableId];
+            let tbody = table.querySelector("tbody");
+            if(!tbody) return;
+            let trs = Array.from(tbody.getElementsByTagName("tr"));
+            let validRows = trs.filter(tr => tr.style.display !== "none" && !tr.classList.contains("filtered-out") && tr.children.length > 1);
+            let totalRows = validRows.length;
+            let totalPages = state.rowsPerPage === 'all' ? 1 : Math.ceil(totalRows / state.rowsPerPage);
+            if (state.page > totalPages && totalPages > 0) state.page = totalPages;
+            if (state.page < 1) state.page = 1;
+            let startIdx = state.rowsPerPage === 'all' ? 0 : (state.page - 1) * state.rowsPerPage;
+            let endIdx = state.rowsPerPage === 'all' ? totalRows : startIdx + state.rowsPerPage;
+            trs.forEach(tr => { if(tr.children.length > 1 && !tr.classList.contains("filtered-out")) { tr.style.display = "none"; } });
+            validRows.slice(startIdx, endIdx).forEach(tr => tr.style.display = "");
+            let infoSpan = document.getElementById(`page-info-${tableId}`), prevBtn = document.getElementById(`prev-btn-${tableId}`), nextBtn = document.getElementById(`next-btn-${tableId}`);
+            if(infoSpan) infoSpan.innerText = `Page ${state.page} of ${totalPages || 1} (${totalRows} items)`;
+            if(prevBtn) prevBtn.disabled = (state.page === 1);
+            if(nextBtn) nextBtn.disabled = (state.page === totalPages || totalPages === 0);
+        }
+        function changePage(tableId, dir) { tableState[tableId].page += dir; renderPage(tableId); }
+        function changeRowsPerPage(tableId, val) { tableState[tableId].rowsPerPage = val === 'all' ? 'all' : parseInt(val); tableState[tableId].page = 1; renderPage(tableId); }
+
+        function exportTableToCSV(filename, tableId) {
+            var csv = [], rows = document.querySelectorAll("#" + tableId + " tr");
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i].classList.contains('filtered-out') || (rows[i].style.display === 'none' && !tableState[tableId])) continue;
+                var row = [], cols = rows[i].querySelectorAll("td, th"), colCount = cols.length > 0 ? cols.length - 1 : 0;
+                for (var j = 0; j < colCount; j++) { var cellText = cols[j].innerText.replace(/"/g, '""').replace(/\n/g, ' '); row.push('"' + cellText + '"'); }
+                if (row.length > 0) csv.push(row.join(","));
+            }
+            var csvFile = new Blob([csv.join("\n")], { type: "text/csv" }), downloadLink = document.createElement("a"); downloadLink.download = filename; downloadLink.href = window.URL.createObjectURL(csvFile); downloadLink.style.display = "none"; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
+        }
+
+        function filterLedger() {
+            let input = document.getElementById("searchLedger").value.toLowerCase(), startDate = document.getElementById("ledgerStartDate").value, endDate = document.getElementById("ledgerEndDate").value, table = document.getElementById("ledgerTable"), tbody = table.querySelector("tbody"), tr = tbody.getElementsByTagName("tr");
+            for (let i = 0; i < tr.length; i++) {
+                if (tr[i].children.length === 1) continue; 
+                let rowText = tr[i].innerText.toLowerCase(), rowDateText = tr[i].cells[1].innerText.trim(), rowDate = rowDateText.length >= 10 ? rowDateText.substring(0, 10) : "", showRow = true;
+                if (input && !rowText.includes(input)) { showRow = false; }
+                if (startDate && rowDate && rowDate < startDate) { showRow = false; }
+                if (endDate && rowDate && rowDate > endDate) { showRow = false; }
+                if (showRow) { tr[i].classList.remove("filtered-out"); tr[i].style.display = ""; } else { tr[i].classList.add("filtered-out"); tr[i].style.display = "none"; }
+            }
+            if(tableState['ledgerTable']) { tableState['ledgerTable'].page = 1; renderPage('ledgerTable'); }
+            recalcLedgerTotal();
+        }
+
+        // Filter-aware totals for the Recent Transactions Ledger: sums Money IN / Money OUT
+        // across every row matching the active search + date filter (ignores pagination).
+        function recalcLedgerTotal() {
+            const table = document.getElementById('ledgerTable');
+            if (!table) return;
+            let totIn = 0, totOut = 0;
+            const modeTotals = {};
+            const num = txt => parseFloat((txt || '').replace(/[^0-9.\-]/g, '')) || 0;
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                if (tr.classList.contains('filtered-out')) return;
+                const tds = tr.getElementsByTagName('td');
+                if (tds.length < 8) return; // skip placeholder + colspan "Adjustment" rows
+                totIn  += num(tds[5].innerText);
+                totOut += num(tds[6].innerText);
+                // Payment-mode breakdown (filter-aware) from row data attributes
+                const mode = tr.getAttribute('data-mode') || 'Other';
+                const amt = parseFloat(tr.getAttribute('data-amount')) || 0;
+                if (!modeTotals[mode]) modeTotals[mode] = { in: 0, out: 0 };
+                if (amt >= 0) modeTotals[mode].in += amt; else modeTotals[mode].out += Math.abs(amt);
+            });
+            const fmt = n => n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = fmt(val); };
+            setVal('led-tot-in', totIn);
+            setVal('led-tot-out', totOut);
+            // Render mode breakdown table
+            const body = document.getElementById('ledgerModeBreakdownBody');
+            if (body) {
+                const order = ['Cash', 'Petty Cash', 'Bank Transfer', 'POS Payment', 'Cheque', 'Capital/Loan Account', 'On A/C', 'Adjustment', 'Contra', 'Other'];
+                const modes = Object.keys(modeTotals).sort((a, b) => {
+                    let ia = order.indexOf(a); let ib = order.indexOf(b);
+                    if (ia === -1) ia = order.length; if (ib === -1) ib = order.length;
+                    return ia - ib || a.localeCompare(b);
+                });
+                if (!modes.length) {
+                    body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:8px; color:#94a3b8;">No transactions.</td></tr>';
+                } else {
+                    let rows = '';
+                    modes.forEach(m => {
+                        const t = modeTotals[m];
+                        rows += `<tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:6px 10px; font-weight:bold; color:#334155;">${m}</td>
+                            <td style="padding:6px 10px; text-align:right; color:#10b981;">${t.in > 0 ? fmt(t.in) : '-'}</td>
+                            <td style="padding:6px 10px; text-align:right; color:#ef4444;">${t.out > 0 ? fmt(t.out) : '-'}</td></tr>`;
+                    });
+                    rows += `<tr style="background:#f8fafc; font-weight:bold; border-top:2px solid #cbd5e1;">
+                        <td style="padding:6px 10px;">TOTAL</td>
+                        <td style="padding:6px 10px; text-align:right; color:#10b981;">${fmt(totIn)}</td>
+                        <td style="padding:6px 10px; text-align:right; color:#ef4444;">${fmt(totOut)}</td></tr>`;
+                    body.innerHTML = rows;
+                }
+            }
+        }
+
+        function filterRefunds() {
+            let input = document.getElementById("searchRefund").value.toLowerCase(), startDate = document.getElementById("refundStartDate").value, endDate = document.getElementById("refundEndDate").value, table = document.getElementById("refundTable"), tbody = table.querySelector("tbody"), tr = tbody.getElementsByTagName("tr");
+            for (let i = 0; i < tr.length; i++) {
+                if (tr[i].children.length === 1) continue; 
+                let rowText = tr[i].innerText.toLowerCase(), rowDate = tr[i].cells[0].innerText.trim().substring(0, 10), showRow = true;
+                if (input && !rowText.includes(input)) { showRow = false; }
+                if (startDate && rowDate && rowDate < startDate) { showRow = false; }
+                if (endDate && rowDate && rowDate > endDate) { showRow = false; }
+                if (showRow) { tr[i].classList.remove("filtered-out"); tr[i].style.display = ""; } else { tr[i].classList.add("filtered-out"); tr[i].style.display = "none"; }
+            }
+            if(tableState['refundTable']) { tableState['refundTable'].page = 1; renderPage('refundTable'); }
+        }
+
+        function toggleLedger() {
+            const content = document.getElementById('ledgerContent'), btn = document.getElementById('ledgerToggleBtn');
+            if (content.style.display === 'none') { content.style.display = 'block'; btn.innerText = '-'; } else { content.style.display = 'none'; btn.innerText = '+'; }
+        }
+
+        function deriveCategoryFromType(type) {
+            if (!type) return 'misc_income';
+            var t = type.split(' - ')[0].trim().toLowerCase();
+            var map = {
+                'customer payment': 'receipt', 'customer advance': 'advance_receipt',
+                'refund from supplier': 'refund_supplier', 'room rent collection': 'room_rent_col',
+                'water bill collection': 'utility_water', 'electricity bill collection': 'utility_elec',
+                'miscellaneous income': 'misc_income', 'adjustment invoice': 'adjustment_invoice',
+                'supplier payment': 'payment', 'supplier advance': 'advance_payment',
+                'refund to customer': 'refund_customer', 'vehicle emi payment': 'vehicle_emi',
+                'vehicle maintenance expense': 'car_maintenance', 'registration expense': 'registration_expense',
+                'miscellaneous expense': 'misc_expense', 'room water payment': 'room_water_payment',
+                'room electricity payment': 'room_elec_payment', 'room wifi payment': 'room_wifi_payment',
+                'room tax payment': 'room_tax_payment', 'salary payment': 'salary_payment',
+                'payout': 'payout', 'money receipt': 'money_receipt'
+            };
+            return map[t] || 'misc_income';
+        }
+
+        // Reads the edit button's data-* attributes and hands them to editTransaction.
+        // Using data-attributes (not inline string args) keeps apostrophes/quotes in remarks
+        // or transaction type from breaking the click handler.
+        function editTransactionFromBtn(btn) {
+            const d = btn.dataset;
+            editTransaction(d.id, d.date, d.category, d.type, d.amount, d.mode, d.remarks, d.cust, d.sup, d.veh, d.room, d.staff, d.bank, d.cheque, d.chequedate, d.capital);
+        }
+
+        function editTransaction(id, transactionDate, category, type, amount, mode, remarks, cust, sup, veh, room, staff, bank, cheque, chequeDate, capital) {
+            document.getElementById('topTransactionCard').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('editTxnId').value = id;
+            document.getElementById('txnDate').value = formatDateDDMMYYYY(transactionDate);
+            var cat = (category && category !== 'None' && category !== '') ? category : deriveCategoryFromType(type);
+            setTxnCategory(cat, (room && room !== 'None') ? room : null);
+            _editOriginalMode = (mode && mode !== 'None') ? mode : 'Cash';
+            document.getElementById('txnAmount').value = Math.abs(parseFloat(amount) || 0);
+            document.getElementById('paymentMode').value = (mode && mode !== 'None') ? mode : 'Cash';
+            document.getElementById('remarksInput').value = (remarks && remarks !== 'None') ? remarks : '';
+            // Show/hide the category-dependent fields, then restore the values they reset
+            toggleTxnFields();
+            // Reveal and restore Cheque / Bank Transfer details to match the original entry
+            toggleChequeFields();
+            if (bank && bank !== 'None') document.getElementById('bankAccountSelect').value = bank;
+            if (capital && capital !== 'None') document.getElementById('capitalAccountSelect').value = capital;
+            document.getElementById('txnChequeNo').value = (cheque && cheque !== 'None') ? cheque : '';
+            document.getElementById('txnChequeDate').value = (chequeDate && chequeDate !== 'None') ? chequeDate : '';
+            if (cust && cust !== 'None') { document.getElementById('customerSelect').value = cust; if(window._refreshCustomerSelect2) window._refreshCustomerSelect2(); }
+            if (sup && sup !== 'None') document.getElementById('supplierSelect').value = sup;
+            if (veh && veh !== 'None') document.getElementById('vehicleSelect').value = veh;
+            if (room && room !== 'None') document.getElementById('roomSelect').value = room;
+            if (staff && staff !== 'None') document.getElementById('staffSelect').value = staff;
+            // Refresh the invoice/bill panel now that the customer/supplier is set
+            fetchInvoices();
+            logTransactionAction(id, "Opened in Edit Mode");
+            document.getElementById('saveTxnBtn').innerText = "💾 Update Transaction";
+            document.getElementById('cancelEditBtn').style.display = "inline-block";
+            document.getElementById('topTransactionCard').style.boxShadow = "0 0 15px #f59e0b";
+        }
+
+        function cancelEdit() {
+            document.getElementById('editTxnId').value = ""; _editOriginalMode = null; document.getElementById('txnDate').value = formatDateDDMMYYYY(new Date()); document.getElementById('txnCategory').value = ""; document.getElementById('txnSubCategory').innerHTML = ''; document.getElementById('txnSubCategory').dataset.head = ''; document.getElementById('txnAmount').value = ""; document.getElementById('paymentMode').value = "Cash"; document.getElementById('remarksInput').value = ""; document.getElementById('customerSelect').value = ""; if (window._refreshCustomerSelect2) window._refreshCustomerSelect2(); document.getElementById('supplierSelect').value = ""; document.getElementById('staffSelect').value = ""; document.getElementById('capitalAccountSelect').value = "";
+            toggleTxnFields(); forceInvoiceRefresh();
+            document.getElementById('saveTxnBtn').innerText = "Save Transaction"; document.getElementById('cancelEditBtn').style.display = "none"; document.getElementById('topTransactionCard').style.boxShadow = "0 4px 6px rgba(0,0,0,0.02)";
+        }
+
+        function calculateAdjustment() {
+            const type = effectiveTxnType();
+            // Auto-distribute the entered amount across pending items as a sensible default
+            // (oldest first, capped at each item's balance). Locked rows stay fixed; the user
+            // can then fine-tune any unlocked row. Applies to credit adjustments AND receipts/payments.
+            if (['adjustment_invoice', 'receipt', 'payment'].includes(type)) {
+                const totalAmt = parseFloat(document.getElementById('txnAmount').value) || 0;
+                let remainingAmt = totalAmt;
+                // Amounts already confirmed with the Adjust button are fixed — reserve them first
+                document.querySelectorAll('input[name="apply_amount[]"]').forEach(input => {
+                    const rid = input.id ? input.id.replace('apply_', '') : '';
+                    const btn = document.getElementById('adjbtn_' + rid);
+                    if (btn && btn.dataset.state === 'adjusted') { remainingAmt -= (parseFloat(input.value) || 0); }
+                });
+                // Distribute whatever is left across the rows that are not locked
+                document.querySelectorAll('input[name="apply_amount[]"]').forEach(input => {
+                    const rid = input.id ? input.id.replace('apply_', '') : '';
+                    const btn = document.getElementById('adjbtn_' + rid);
+                    if (btn && btn.dataset.state === 'adjusted') return; // leave confirmed rows untouched
+                    const maxBal = parseFloat(input.getAttribute('max')) || 0;
+                    if (remainingAmt > 0) { const apply = Math.min(remainingAmt, maxBal); input.value = apply.toFixed(window.CURRENCY_DECIMALS); remainingAmt -= Math.round(apply * 100) / 100; } else { input.value = ''; }
+                });
+            }
+            updateAllocationSummary();
+        }
+
+        // Floating popup used when an allocation would exceed the allowed amount.
+        function flashAllocPopup(msg) {
+            let pop = document.getElementById('allocPopup');
+            if (!pop) {
+                pop = document.createElement('div');
+                pop.id = 'allocPopup';
+                pop.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc2626; color:#fff; padding:12px 18px; border-radius:8px; font-size:13px; font-weight:bold; box-shadow:0 6px 20px rgba(0,0,0,0.25); z-index:99999; max-width:90%; text-align:center;';
+                document.body.appendChild(pop);
+            }
+            pop.textContent = '⚠️ ' + msg;
+            pop.style.display = 'block';
+            clearTimeout(window.__allocPopTimer);
+            window.__allocPopTimer = setTimeout(() => { pop.style.display = 'none'; }, 2800);
+        }
+
+        // Live Total / Allocated / Remaining tracker shown under the amount + allocation table.
+        function updateAllocationSummary() {
+            const type = effectiveTxnType();
+            const bar = document.getElementById('allocSummaryBar');
+            if (!bar) return;
+            if (!['receipt', 'payment', 'adjustment_invoice'].includes(type)) { bar.style.display = 'none'; return; }
+            const total = parseFloat(document.getElementById('txnAmount').value) || 0;
+            let applied = 0;
+            document.querySelectorAll('input[name="apply_amount[]"]').forEach(i => applied += (parseFloat(i.value) || 0));
+            applied = Math.round(applied * 100) / 100;
+            const remaining = Math.round((total - applied) * 100) / 100;
+            bar.style.display = 'block';
+            document.getElementById('allocTotalAmt').textContent = total.toFixed(window.CURRENCY_DECIMALS);
+            document.getElementById('allocAppliedAmt').textContent = applied.toFixed(window.CURRENCY_DECIMALS);
+            const remEl = document.getElementById('allocRemainingAmt');
+            const statusEl = document.getElementById('allocStatusMsg');
+            remEl.textContent = remaining.toFixed(window.CURRENCY_DECIMALS);
+            const creditLabel = (type === 'payment') ? 'a supplier advance / credit' : 'a customer advance / credit';
+            if (total <= 0) {
+                statusEl.style.color = '#64748b'; remEl.style.color = '#64748b';
+                statusEl.textContent = 'Enter the amount above first, then allocate it to the items below.';
+            } else if (remaining > 0.01) {
+                statusEl.style.color = '#b45309'; remEl.style.color = '#b45309';
+                statusEl.textContent = `⚠️ ${remaining.toFixed(window.CURRENCY_DECIMALS)} still remaining to adjust` + (type === 'adjustment_invoice' ? '.' : ` — the unallocated amount will be saved as ${creditLabel}.`);
+            } else if (remaining < -0.01) {
+                statusEl.style.color = '#dc2626'; remEl.style.color = '#dc2626';
+                statusEl.textContent = `❌ Allocated ${applied.toFixed(window.CURRENCY_DECIMALS)} exceeds the amount ${total.toFixed(window.CURRENCY_DECIMALS)}. Reduce the allocation.`;
+            } else {
+                statusEl.style.color = '#059669'; remEl.style.color = '#059669';
+                statusEl.textContent = '✓ Fully adjusted — nothing remaining.';
+            }
+        }
+
+        // Transaction date is displayed as DD/MM/YYYY. The native date picker stores YYYY-MM-DD.
+        function formatDateDDMMYYYY(value) {
+            if (!value) return '';
+            const v = String(value).trim();
+            let m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return m[3] + '/' + m[2] + '/' + m[1];
+            m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (m) return m[1] + '/' + m[2] + '/' + m[3];
+            const d = value instanceof Date ? value : new Date(value);
+            if (isNaN(d.getTime())) return '';
+            return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+        }
+
+        function openTxnDatePicker() {
+            const picker = document.getElementById('txnDatePicker');
+            if (!picker) return;
+            const display = document.getElementById('txnDate').value.trim();
+            const m = display.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (m) picker.value = m[3] + '-' + m[2] + '-' + m[1];
+            if (typeof picker.showPicker === 'function') picker.showPicker();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateEl = document.getElementById('txnDate');
+            const picker = document.getElementById('txnDatePicker');
+            if (dateEl && !dateEl.value) dateEl.value = formatDateDDMMYYYY(new Date());
+            if (picker) {
+                picker.addEventListener('click', function() {
+                    const display = dateEl.value.trim();
+                    const m = display.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (m) this.value = m[3] + '-' + m[2] + '-' + m[1];
+                });
+                picker.addEventListener('change', function() {
+                    if (this.value) dateEl.value = formatDateDDMMYYYY(this.value);
+                });
+            }
+        });
+
+        function toggleTxnFields() {
+            syncSubCategory();
+            const type = effectiveTxnType(), custDiv = document.getElementById('customerDiv'), supDiv = document.getElementById('supplierDiv'), invDiv = document.getElementById('invoiceAllocationDiv'), allocTitle = document.getElementById('allocationTitleLabel'), assetDiv = document.getElementById('assetDiv'), vehicleDiv = document.getElementById('vehicleDiv'), roomDiv = document.getElementById('roomDiv'), staffDiv = document.getElementById('staffDiv'), paymentMode = document.getElementById('paymentMode'), adjMode = document.getElementById('adjMode'), amountGroup = document.getElementById('amountGroup'), paymentModeGroup = document.getElementById('paymentModeGroup'), emiBankDiv = document.getElementById('emiBankDiv');
+            const bankXferDiv = document.getElementById('bankTransferDiv'), bankSelectLabel = document.getElementById('bankSelectLabel');
+
+            // Contra / internal transfer (cash <-> bank): no customer/supplier, just a bank account + amount
+            if (['cash_to_bank', 'bank_to_cash'].includes(type)) {
+                custDiv.style.display = 'none'; supDiv.style.display = 'none'; invDiv.style.display = 'none';
+                assetDiv.style.display = 'none'; vehicleDiv.style.display = 'none'; roomDiv.style.display = 'none';
+                staffDiv.style.display = 'none'; emiBankDiv.style.display = 'none';
+                document.querySelector('select[name="customer_id"]').value = '';
+                document.querySelector('select[name="supplier_id"]').value = '';
+                adjMode.style.display = 'none';
+                if (paymentMode.value === 'Adjustment') paymentMode.value = 'Cash';
+                paymentModeGroup.style.display = 'none';   // payment mode is irrelevant for an internal transfer
+                document.getElementById('chequeFields').style.display = 'none';
+                const _capDiv = document.getElementById('capitalAccountDiv'), _capSel = document.getElementById('capitalAccountSelect');
+                if (_capDiv) _capDiv.style.display = 'none';
+                if (_capSel) { _capSel.required = false; _capSel.value = ''; }
+                document.getElementById('amountLabel').innerHTML = 'Amount *';
+                document.getElementById('txnAmount').style.backgroundColor = '#fff';
+                document.getElementById('txnAmount').style.borderColor = '#cbd5e1';
+                bankXferDiv.style.display = 'flex';        // always show the bank account selector
+                if (bankSelectLabel) bankSelectLabel.innerText = (type === 'cash_to_bank') ? 'Deposit Into Bank Account *' : 'Withdraw From Bank Account *';
+                fetchInvoices();
+                return;
+            }
+            // Non-contra: restore the default bank label and let payment mode drive the bank panel
+            if (bankSelectLabel) bankSelectLabel.innerText = 'Select Source Bank Account (Payer) *';
+            toggleChequeFields();
+            if (['receipt', 'advance_receipt', 'refund_customer', 'utility_water', 'utility_elec', 'room_rent_col', 'misc_income', 'adjustment_invoice'].includes(type)) {
+                custDiv.style.display = 'flex'; supDiv.style.display = 'none'; staffDiv.style.display = 'none'; emiBankDiv.style.display = 'none';
+                document.querySelector('select[name="supplier_id"]').value = '';
+                invDiv.style.display = ['receipt', 'adjustment_invoice'].includes(type) ? 'block' : 'none';
+                allocTitle.innerText = "Allocate to Pending Invoices";
+                if (type === 'adjustment_invoice') {
+                    adjMode.style.display = 'block'; paymentMode.value = 'Adjustment'; paymentModeGroup.style.display = 'none'; document.getElementById('amountLabel').innerHTML = 'Adjust Amount (From Ledger) *'; document.getElementById('txnAmount').style.backgroundColor = '#fffbeb'; document.getElementById('txnAmount').style.borderColor = '#f59e0b';
+                } else {
+                    adjMode.style.display = 'none'; if (paymentMode.value === 'Adjustment') paymentMode.value = 'Cash'; paymentModeGroup.style.display = 'flex'; document.getElementById('amountLabel').innerHTML = 'Amount *'; document.getElementById('txnAmount').style.backgroundColor = '#fff'; document.getElementById('txnAmount').style.borderColor = '#cbd5e1';
+                }
+            } else if (['payment', 'advance_payment', 'refund_supplier', 'vehicle_emi', 'car_maintenance', 'registration_expense', 'misc_expense', 'room_water_payment', 'room_elec_payment', 'room_wifi_payment', 'room_tax_payment', 'salary_payment'].includes(type)) {
+                custDiv.style.display = 'none';
+                if (type === 'vehicle_emi') { supDiv.style.display = 'none'; staffDiv.style.display = 'none'; emiBankDiv.style.display = 'flex'; invDiv.style.display = 'none'; } else if (type === 'salary_payment') { supDiv.style.display = 'none'; staffDiv.style.display = 'flex'; emiBankDiv.style.display = 'none'; invDiv.style.display = 'none'; } else { supDiv.style.display = 'flex'; staffDiv.style.display = 'none'; emiBankDiv.style.display = 'none'; invDiv.style.display = (type === 'payment') ? 'block' : 'none'; }
+                document.getElementById('supplierLabel').innerText = (type === 'misc_expense') ? 'Select Supplier (Optional)' : 'Select Supplier *';
+                allocTitle.innerText = "Allocate to Pending Supplier Bills"; document.querySelector('select[name="customer_id"]').value = ''; adjMode.style.display = 'none'; if (paymentMode.value === 'Adjustment') paymentMode.value = 'Cash'; paymentModeGroup.style.display = 'flex'; document.getElementById('amountLabel').innerHTML = 'Amount *'; document.getElementById('txnAmount').style.backgroundColor = '#fff'; document.getElementById('txnAmount').style.borderColor = '#cbd5e1';
+            } else {
+                // Standalone money movement with no party or bill to attach — currently
+                // "Payout". Clear any party left over from the previous selection and make
+                // sure the payment-mode group is visible again (Contra / Adjustment hide it).
+                custDiv.style.display = 'none'; supDiv.style.display = 'none'; staffDiv.style.display = 'none'; invDiv.style.display = 'none'; emiBankDiv.style.display = 'none';
+                document.querySelector('select[name="customer_id"]').value = '';
+                document.querySelector('select[name="supplier_id"]').value = '';
+                adjMode.style.display = 'none';
+                if (paymentMode.value === 'Adjustment') paymentMode.value = 'Cash';
+                paymentModeGroup.style.display = 'flex';
+                document.getElementById('amountLabel').innerHTML = (type === 'payout') ? 'Payout Amount *' : (type === 'money_receipt' ? 'Money Receipt Amount *' : 'Amount *');
+                document.getElementById('txnAmount').style.backgroundColor = '#fff';
+                document.getElementById('txnAmount').style.borderColor = '#cbd5e1';
+            }
+            if (['advance_receipt', 'room_rent_col', 'utility_water', 'utility_elec', 'misc_income', 'vehicle_emi', 'car_maintenance', 'registration_expense', 'misc_expense', 'room_water_payment', 'room_elec_payment', 'room_wifi_payment', 'room_tax_payment'].includes(type)) { assetDiv.style.display = 'flex'; vehicleDiv.style.display = ['advance_receipt', 'misc_income', 'vehicle_emi', 'car_maintenance', 'registration_expense', 'misc_expense'].includes(type) ? 'flex' : 'none'; roomDiv.style.display = ['advance_receipt', 'room_rent_col', 'utility_water', 'utility_elec', 'misc_income', 'room_water_payment', 'room_elec_payment', 'room_wifi_payment', 'room_tax_payment'].includes(type) ? 'flex' : 'none'; } else { assetDiv.style.display = 'none'; vehicleDiv.style.display = 'none'; roomDiv.style.display = 'none'; }
+            // The branches above may have forced the payment mode (e.g. Adjustment) — resync
+            // the cheque / bank / capital-account panels with whatever mode is now selected.
+            toggleChequeFields();
+            fetchInvoices();
+        }
+
+        function toggleChequeFields() {
+            const mode = document.getElementById('paymentMode').value, chequeDiv = document.getElementById('chequeFields'), bankDiv = document.getElementById('bankTransferDiv');
+            const capDiv = document.getElementById('capitalAccountDiv'), capSel = document.getElementById('capitalAccountSelect');
+            chequeDiv.style.display = (mode === 'Cheque') ? 'flex' : 'none'; bankDiv.style.display = (mode === 'Bank Transfer') ? 'flex' : 'none';
+            // Capital / Loan account holder is required only for that payment mode.
+            const isCapital = (mode === 'Capital/Loan Account');
+            if (capDiv) capDiv.style.display = isCapital ? 'flex' : 'none';
+            if (capSel) { capSel.required = isCapital; if (!isCapital) capSel.value = ''; }
+            enforceMoneyReceiptModes();
+        }
+
+        // ---------------- Grouped transaction heads ----------------
+        // A head in the main list stands for several real categories. The sub-type
+        // selector carries the real one, which is what the server records, so every
+        // accounting rule stays keyed on the leaf category exactly as before.
+        const TXN_GROUPS = {
+            occupancy_billing: { label: 'Occupancy Billing', color: '#059669', options: [
+                ['room_rent_col', 'Property / Room Rent Collection'], ['utility_water', 'Water Bill Collection'],
+                ['utility_elec', 'Electricity Bill Collection'], ['misc_income', 'Miscellaneous Income'] ] },
+            fleet_expenses: { label: 'Fleet Expenses', color: '#1e3a8a', options: [
+                ['car_maintenance', 'Vehicle Maintenance Expense'], ['vehicle_emi', 'Vehicle EMI Payment'],
+                ['registration_expense', 'Registration Expenses'] ] },
+            property_opex: { label: 'Property Operating Expenses', color: '#8b5cf6', options: [
+                ['room_water_payment', 'Room Water Payment'], ['room_elec_payment', 'Room Electricity Payment'],
+                ['room_wifi_payment', 'Room WiFi Payment'], ['room_tax_payment', 'Room Tax Payment'] ] }
+        };
+        function txnHead() { return document.getElementById('txnCategory').value; }
+        // The category the server will record: the sub-type under a grouped head, else the head itself.
+        function effectiveTxnType() {
+            const head = txnHead();
+            if (TXN_GROUPS[head]) { const sub = document.getElementById('txnSubCategory'); return sub.value || TXN_GROUPS[head].options[0][0]; }
+            return head;
+        }
+        // Show and populate the sub-type selector for a grouped head; hide it otherwise.
+        function syncSubCategory() {
+            const head = txnHead(), grp = document.getElementById('subCategoryGroup'), sel = document.getElementById('txnSubCategory'), lbl = document.getElementById('subCategoryLabel');
+            if (TXN_GROUPS[head]) {
+                if (sel.dataset.head !== head) {
+                    sel.innerHTML = TXN_GROUPS[head].options.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
+                    sel.dataset.head = head;
+                }
+                lbl.innerText = TXN_GROUPS[head].label + ' — Select Type *'; lbl.style.color = TXN_GROUPS[head].color; sel.style.borderColor = TXN_GROUPS[head].color;
+                grp.style.display = 'flex'; sel.required = true;
+            } else {
+                grp.style.display = 'none'; sel.required = false; sel.innerHTML = ''; sel.dataset.head = '';
+            }
+        }
+        // Select a leaf category, routing through its grouped head when it has one. Miscellaneous
+        // Income exists both standalone and under Occupancy Billing: a row tied to a room goes
+        // through the head, otherwise it is the standalone option.
+        function setTxnCategory(cat, roomId) {
+            const main = document.getElementById('txnCategory');
+            const standalone = !!main.querySelector(`option[value="${cat}"]`);
+            const head = Object.keys(TXN_GROUPS).find(h => TXN_GROUPS[h].options.some(o => o[0] === cat));
+            if (head && (!standalone || (cat === 'misc_income' && roomId))) {
+                main.value = head; syncSubCategory(); document.getElementById('txnSubCategory').value = cat;
+            } else {
+                main.value = cat; syncSubCategory();
+            }
+        }
+
+        // ---------------- Payment-mode rules (A-Rules) ----------------
+        // Keyed on what was picked in the main list, so a rule on "Occupancy Billing" covers
+        // every type under it while standalone Miscellaneous Income keeps every mode.
+        const HIDDEN_MODES = {
+            receipt:           ['Petty Cash', 'Capital/Loan Account', 'On A/C'],
+            advance_receipt:   ['Petty Cash', 'Capital/Loan Account', 'On A/C'],
+            refund_supplier:   ['Petty Cash', 'Capital/Loan Account', 'POS Payment'],
+            refund_customer:   ['POS Payment', 'Capital/Loan Account'],
+            occupancy_billing: ['Petty Cash', 'Capital/Loan Account', 'On A/C'],
+            money_receipt:     ['Bank Transfer', 'POS Payment', 'Cheque', 'On A/C']
+        };
+        const MONEY_RECEIPT_MODES = ['Cash', 'Petty Cash', 'Capital/Loan Account'];
+        let _editOriginalMode = null;   // while editing, the row's own mode always stays selectable
+        function enforcePaymentModeRules() {
+            const head = txnHead(), sel = document.getElementById('paymentMode'), hint = document.getElementById('moneyReceiptModeHint');
+            const hidden = HIDDEN_MODES[head] || [];
+            const isMR = (head === 'money_receipt');
+            const editing = !!document.getElementById('editTxnId').value;
+            Array.from(sel.options).forEach(o => {
+                if (o.id === 'adjMode') return;
+                const hide = hidden.includes(o.value) && !(editing && o.value === _editOriginalMode);
+                o.hidden = hide; o.disabled = hide;
+            });
+            if (hint) hint.style.display = isMR ? 'block' : 'none';
+            const cur = sel.options[sel.selectedIndex];
+            if (cur && cur.disabled) {
+                if (isMR) alert("'" + cur.text + "' is not an appropriate payment mode for a Money Receipt.\nUse Cash, Petty Cash or Capital / Loan Account.");
+                sel.value = 'Cash';
+                const capDiv = document.getElementById('capitalAccountDiv'), capSel = document.getElementById('capitalAccountSelect');
+                document.getElementById('chequeFields').style.display = 'none';
+                document.getElementById('bankTransferDiv').style.display = 'none';
+                if (capDiv) capDiv.style.display = 'none';
+                if (capSel) { capSel.required = false; capSel.value = ''; }
+            }
+        }
+        function enforceMoneyReceiptModes() { enforcePaymentModeRules(); }   // kept for older callers
+
+        async function fetchInvoices() {
+            const custSelect = document.getElementById('customerSelect'), supSelect = document.getElementById('supplierSelect'), type = effectiveTxnType(), alertDiv = document.getElementById('customerBalanceAlert'), tbody = document.getElementById('invoiceListBody');
+            let fetchId = null, endpoint = '';
+            if (['receipt', 'adjustment_invoice'].includes(type)) {
+                fetchId = custSelect.value; endpoint = '/api/get_customer_invoices/';
+                if (type === 'adjustment_invoice' && fetchId) {
+                    const selectedOption = custSelect.options[custSelect.selectedIndex], balance = parseFloat(selectedOption.getAttribute('data-balance') || 0);
+                    if (balance < 0) { alertDiv.innerHTML = `✅ Customer has Available Credit: <b>${Math.abs(balance).toFixed(window.CURRENCY_DECIMALS)}</b>`; alertDiv.style.color = '#065f46'; alertDiv.style.backgroundColor = '#d1fae5'; alertDiv.style.borderColor = '#10b981'; } else if (balance > 0) { alertDiv.innerHTML = `⚠️ Customer has NO Credit Available. They currently owe: <b>${balance.toFixed(window.CURRENCY_DECIMALS)}</b>`; alertDiv.style.color = '#991b1b'; alertDiv.style.backgroundColor = '#fee2e2'; alertDiv.style.borderColor = '#ef4444'; } else { alertDiv.innerHTML = `ℹ️ Customer Balance is exactly 0.00. No credit to adjust.`; alertDiv.style.color = '#334155'; alertDiv.style.backgroundColor = '#f1f5f9'; alertDiv.style.borderColor = '#cbd5e1'; }
+                    alertDiv.style.display = 'block';
+                } else { alertDiv.style.display = 'none'; }
+            } else if (type === 'payment') { fetchId = supSelect.value; endpoint = '/api/get_supplier_payables/'; alertDiv.style.display = 'none'; }
+            if (!fetchId) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Select a record to view pending items.</td></tr>'; updateAllocationSummary(); return; }
+            // In edit mode, ask the server to add back what THIS receipt already applied
+            const editId = document.getElementById('editTxnId').value;
+            try {
+                let url = endpoint + fetchId + '?t=' + new Date().getTime();
+                if (editId) url += '&edit_id=' + encodeURIComponent(editId);
+                const res = await fetch(url), items = await res.json();
+                if (items.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#10b981; font-weight:bold;">No pending items for this ${type === 'payment' ? 'supplier' : 'customer'}!</td></tr>`; updateAllocationSummary(); return; }
+                tbody.innerHTML = '';
+                items.forEach(item => {
+                    const prefix = type === 'payment' ? 'BILL' : 'INV';
+                    const rid = item.booking_id || item.id;
+                    const avail = parseFloat(item.outstanding != null ? item.outstanding : item.balance_due) || 0;
+                    const applied = parseFloat(item.applied || 0) || 0;
+                    tbody.innerHTML += `<tr id="allocrow_${rid}">
+                        <td style="font-weight:bold;">${prefix}-${rid}<input type="hidden" name="${type === 'payment' ? 'bill_id' : 'invoice_id'}[]" value="${rid}"></td>
+                        <td>${item.date}</td>
+                        <td>${item.total.toFixed(window.CURRENCY_DECIMALS)}${(item.paid && item.paid > 0) ? `<div style="font-size:10px; color:#059669; font-weight:bold;">Adv/Paid: ${item.paid.toFixed(window.CURRENCY_DECIMALS)}</div>` : ''}</td>
+                        <td style="color:#ef4444; font-weight:bold;">${avail.toFixed(window.CURRENCY_DECIMALS)}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="number" id="apply_${rid}" name="apply_amount[]" step="0.01" min="0" max="${avail}" value="${applied > 0 ? applied.toFixed(window.CURRENCY_DECIMALS) : ''}" placeholder="0.00" style="padding:6px; font-size:12px; width:90px;" oninput="onApplyInput(${rid}, ${avail})">
+                                <button type="button" id="adjbtn_${rid}" onclick="toggleAdjust(${rid}, ${avail})" style="padding:6px 10px; font-size:11px; border:none; border-radius:4px; cursor:pointer; background:#3b82f6; color:#fff; white-space:nowrap;">Adjust</button>
+                            </div>
+                            <div id="rem_${rid}" style="font-size:11px; font-weight:bold; margin-top:4px;"></div>
+                        </td>
+                    </tr>`;
+                });
+                // Pre-mark rows that already had an amount applied by this receipt (edit mode)
+                items.forEach(item => {
+                    const rid = item.booking_id || item.id;
+                    const avail = parseFloat(item.outstanding != null ? item.outstanding : item.balance_due) || 0;
+                    if ((parseFloat(item.applied || 0) || 0) > 0) markAdjusted(rid, avail, true);
+                });
+                // New entry → pre-fill (distribute the entered amount as a default the user can adjust).
+                // Edit mode → keep the allocations that were just loaded/locked.
+                const _editId = document.getElementById('editTxnId').value;
+                if (_editId) { updateAllocationSummary(); } else { calculateAdjustment(); }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error loading items.</td></tr>'; }
+        }
+
+        // Live feedback while typing an apply amount (before confirming with the Adjust button).
+        // IMPORTANT: we do NOT reformat the field on every keystroke — that broke multi-digit
+        // typing. We only overwrite the value when it actually exceeds a cap.
+        function onApplyInput(rid, balance) {
+            const input = document.getElementById('apply_' + rid), rem = document.getElementById('rem_' + rid), btn = document.getElementById('adjbtn_' + rid);
+            if (!input) return;
+            // typing un-confirms a previously adjusted row
+            if (btn && btn.dataset.state === 'adjusted') { btn.dataset.state = ''; btn.textContent = 'Adjust'; btn.style.background = '#3b82f6'; const row = document.getElementById('allocrow_' + rid); if (row) row.style.background = ''; }
+            let amt = parseFloat(input.value) || 0;
+            let capValue = null, reason = '';
+            // 1) Per-invoice cap — cannot exceed this item's own outstanding balance
+            if (amt > balance) { capValue = balance; reason = `You cannot adjust more than this item's outstanding balance of ${balance.toFixed(window.CURRENCY_DECIMALS)}.`; }
+            // 2) Total cap — sum of all allocations cannot exceed the transaction amount
+            const total = parseFloat(document.getElementById('txnAmount').value) || 0;
+            if (total > 0) {
+                let others = 0;
+                document.querySelectorAll('input[name="apply_amount[]"]').forEach(i => { if (i !== input) others += (parseFloat(i.value) || 0); });
+                const roomLeft = Math.max(0, Math.round((total - others) * 100) / 100);
+                if (amt > roomLeft && (capValue === null || roomLeft < capValue)) { capValue = roomLeft; reason = `You can only adjust up to the total amount of ${total.toFixed(window.CURRENCY_DECIMALS)}. The most you can still allocate here is ${roomLeft.toFixed(window.CURRENCY_DECIMALS)}.`; }
+            }
+            // Only overwrite the field when we genuinely clamp — otherwise leave the raw text the user is typing.
+            if (capValue !== null && amt > capValue) {
+                input.value = capValue > 0 ? capValue.toFixed(window.CURRENCY_DECIMALS) : '';
+                amt = capValue;
+                flashAllocPopup(reason);
+            }
+            if (rem) {
+                rem.style.color = '#64748b';
+                rem.textContent = amt > 0 ? `Remaining if adjusted: ${(balance - amt).toFixed(window.CURRENCY_DECIMALS)}` : '';
+            }
+            updateAllocationSummary();
+        }
+
+        // Confirm/lock an allocation: turns the button green, shows "Adjusted" + remaining balance
+        function markAdjusted(rid, balance, lock) {
+            const input = document.getElementById('apply_' + rid), rem = document.getElementById('rem_' + rid), btn = document.getElementById('adjbtn_' + rid), row = document.getElementById('allocrow_' + rid);
+            if (!input) return;
+            let amt = parseFloat(input.value) || 0;
+            if (amt <= 0) { return; }
+            if (amt > balance) { amt = balance; }
+            input.value = amt.toFixed(window.CURRENCY_DECIMALS);
+            if (lock) input.readOnly = true;
+            if (btn) { btn.dataset.state = 'adjusted'; btn.textContent = '✓ Adjusted'; btn.style.background = '#10b981'; }
+            if (row) row.style.background = '#ecfdf5';
+            if (rem) { rem.style.color = '#065f46'; rem.textContent = `Adjusted ${amt.toFixed(window.CURRENCY_DECIMALS)} • Remaining ${(balance - amt).toFixed(window.CURRENCY_DECIMALS)}`; }
+            updateAllocationSummary();
+        }
+
+        function toggleAdjust(rid, balance) {
+            const input = document.getElementById('apply_' + rid), btn = document.getElementById('adjbtn_' + rid), rem = document.getElementById('rem_' + rid), row = document.getElementById('allocrow_' + rid);
+            if (!input || !btn) return;
+            if (btn.dataset.state === 'adjusted') {
+                // Undo
+                btn.dataset.state = ''; btn.textContent = 'Adjust'; btn.style.background = '#3b82f6';
+                input.readOnly = false; if (row) row.style.background = '';
+                if (rem) { rem.style.color = '#64748b'; rem.textContent = ''; }
+                updateAllocationSummary();
+                return;
+            }
+            const amt = parseFloat(input.value) || 0;
+            if (amt <= 0) { alert('Enter an amount to adjust first.'); input.focus(); return; }
+            markAdjusted(rid, balance, false);
+        }
+
+        function getRefundDb() { return JSON.parse(localStorage.getItem('erp_refund_tracking_db')) || {}; }
+        function saveRefundDb(db) { localStorage.setItem('erp_refund_tracking_db', JSON.stringify(db)); }
+        function toggleRefundForm() { const form = document.getElementById('newRefundForm'); form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none'; }
+        function openFollowupModal(trackId) { document.getElementById('fuTrackId').value = trackId; document.getElementById('fuRemarks').value = ''; document.getElementById('refundFollowupModal').style.display = 'flex'; }
+
+        // Ensure a refund record has the two-step structure and migrate any legacy single receipt_no.
+        function normalizeRefundRecord(rec) {
+            if (!rec) rec = {};
+            if (!Array.isArray(rec.history)) rec.history = [];
+            if (!rec.step1) rec.step1 = { done: false, id: null, time: null, amount: null };
+            if (!rec.step2) rec.step2 = { done: false, id: null, time: null, amount: null };
+            if (typeof rec.no_customer_step === 'undefined') rec.no_customer_step = false;
+            // Legacy records used a single receipt_no set the moment the process started.
+            // Treat that as "Step 1 already completed" so old data still shows sensibly.
+            if (rec.receipt_no && !rec.step1.done) { rec.step1.done = true; rec.step1.id = rec.receipt_no; }
+            return rec;
+        }
+        // Human-friendly reference number, e.g. RCPT-260705-1234 / PAY-260705-5678
+        function genRefundRef(prefix) {
+            const d = new Date();
+            const stamp = String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+            return prefix + '-' + stamp + '-' + Math.floor(1000 + Math.random() * 9000);
+        }
+        function refundNowStamp() { return new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+
+        function saveFollowup() {
+            const id = document.getElementById('fuTrackId').value, method = document.getElementById('fuMethod').value, remarks = document.getElementById('fuRemarks').value;
+            if (!remarks) return alert("Please enter remarks.");
+            let db = getRefundDb(); let rec = normalizeRefundRecord(db[id]);
+            rec.history.unshift({ time: refundNowStamp(), method: method, desc: remarks });
+            db[id] = rec; saveRefundDb(db); document.getElementById('refundFollowupModal').style.display = 'none'; renderLatestFollowups();
+        }
+
+        function viewRefundHistory(trackId) {
+            let db = getRefundDb(), container = document.getElementById('refundHistoryContainer'); container.innerHTML = '';
+            let rec = normalizeRefundRecord(db[trackId] || {});
+            const fullyDone = rec.step1.done && (rec.step2.done || rec.no_customer_step);
+
+            // --- Progress summary (shows each completed step with its reference number) ---
+            let summary = '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 15px; margin-bottom:15px;">';
+            summary += '<div style="font-weight:bold; color:#1e293b; margin-bottom:10px; font-size:14px;">Refund Progress</div>';
+
+            if (rec.step1.done) {
+                summary += `<div style="margin-bottom:8px;"><span class="badge-green">✅ Step 1 Completed</span> <span style="font-size:12px; color:#334155;">Received refund from supplier</span><br>
+                    <span style="font-size:12px; color:#047857; font-weight:bold;">Receipt No: ${rec.step1.id || '—'}</span>${rec.step1.time ? ` <span style="font-size:11px;color:#94a3b8;">(${rec.step1.time})</span>` : ''}</div>`;
+            } else {
+                summary += `<div style="margin-bottom:8px;"><span style="background:#e2e8f0;color:#475569;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:bold;">⏳ Step 1 Pending</span> <span style="font-size:12px; color:#64748b;">Receive refund from supplier</span></div>`;
+            }
+
+            if (!rec.no_customer_step) {
+                if (rec.step2.done) {
+                    summary += `<div><span class="badge-green">✅ Step 2 Completed</span> <span style="font-size:12px; color:#334155;">Paid refund to customer</span><br>
+                        <span style="font-size:12px; color:#047857; font-weight:bold;">Payment No: ${rec.step2.id || '—'}</span>${rec.step2.time ? ` <span style="font-size:11px;color:#94a3b8;">(${rec.step2.time})</span>` : ''}</div>`;
+                } else if (rec.step1.done) {
+                    summary += `<div><span style="background:#fef3c7;color:#92400e;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:bold;">⏳ Step 2 Pending</span> <span style="font-size:12px; color:#64748b;">Click "Receive &amp; Pay" again to pay the customer</span></div>`;
+                } else {
+                    summary += `<div><span style="background:#e2e8f0;color:#475569;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:bold;">⏳ Step 2 Pending</span> <span style="font-size:12px; color:#64748b;">Pay refund to customer</span></div>`;
+                }
+            }
+
+            if (fullyDone) {
+                let both = `Step 1 Ref: <b>${rec.step1.id || '—'}</b>` + (rec.no_customer_step ? '' : ` &nbsp;|&nbsp; Step 2 Ref: <b>${rec.step2.id || '—'}</b>`);
+                summary += `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed #cbd5e1; color:#065f46; font-weight:bold; font-size:13px;">🎉 Full process completed<br><span style="font-weight:normal; color:#334155;">${both}</span></div>`;
+            }
+            summary += '</div>';
+            container.innerHTML = summary;
+
+            // --- Activity log (follow-ups + system entries) ---
+            let logHtml = '<div style="font-weight:bold; color:#475569; margin-bottom:8px; font-size:13px;">Activity Log</div>';
+            if (!rec.history || rec.history.length === 0) {
+                logHtml += '<p style="color:#64748b; font-size:12px;">No follow-up notes recorded yet.</p>';
+            } else {
+                rec.history.forEach(h => { logHtml += `<div class="history-item"><div class="history-date">${h.time} &nbsp;&nbsp;<span style="color:#8b5cf6;">[${h.method}]</span></div><div class="history-desc">${h.desc}</div></div>`; });
+            }
+            container.innerHTML += '<div class="history-log">' + logHtml + '</div>';
+            document.getElementById('refundHistoryModal').style.display = 'flex';
+        }
+
+        // "Receive & Pay" — advances the refund one step at a time.
+        // Click 1 -> fill Step 1 (receive from supplier). Click 2 (after Step 1 saved) -> fill Step 2 (pay customer).
+        function processReceivedRefund(trackId, supplierId, customerId, expectedAmt, payableAmt) {
+            let db = getRefundDb();
+            let rec = normalizeRefundRecord(db[trackId]);
+            const hasCustomerStep = customerId && customerId !== 'None' && customerId !== '0' && (parseFloat(payableAmt) || 0) > 0;
+            rec.no_customer_step = !hasCustomerStep;
+            db[trackId] = rec; saveRefundDb(db);
+
+            // Already finished everything -> just report both references.
+            if (rec.step1.done && (rec.step2.done || rec.no_customer_step)) {
+                let msg = `✅ This refund is already FULLY COMPLETED.\n\nSTEP 1 (Received from Supplier) — Ref: ${rec.step1.id}`;
+                if (!rec.no_customer_step) msg += `\nSTEP 2 (Paid to Customer) — Ref: ${rec.step2.id}`;
+                alert(msg);
+                return;
+            }
+
+            document.getElementById('topTransactionCard').scrollIntoView({ behavior: 'smooth' });
+            const txnCategory = document.getElementById('txnCategory');
+
+            if (!rec.step1.done) {
+                // ---------- STEP 1: receive refund from supplier ----------
+                txnCategory.value = 'refund_supplier'; toggleTxnFields();
+                setTimeout(() => {
+                    const supSel = document.getElementById('supplierSelect'); if (supSel) supSel.value = supplierId;
+                    const amtInput = document.getElementById('txnAmount'); if (amtInput) amtInput.value = expectedAmt;
+                    txnCategory.style.boxShadow = "0 0 10px #3b82f6"; setTimeout(() => txnCategory.style.boxShadow = "none", 2000);
+                    const ref = genRefundRef('RCPT');
+                    localStorage.setItem('erp_pending_refund_step', JSON.stringify({
+                        trackId: String(trackId), step: 1, expectType: 'refund_supplier', genId: ref, amount: parseFloat(expectedAmt) || 0, armed: false
+                    }));
+                    alert(`STEP 1 of 2 — RECEIVE REFUND FROM SUPPLIER\n\nThe form is filled to receive ${expectedAmt} from the supplier.\nReview and click "Save Transaction".\n\nOnce saved, Step 1 is marked complete (Receipt No: ${ref}).` + (hasCustomerStep ? `\nThen click "Receive & Pay" again to process Step 2 (pay the customer).` : ``));
+                }, 120);
+            } else {
+                // ---------- STEP 2: pay refund to customer (Step 1 already done) ----------
+                txnCategory.value = 'refund_customer'; toggleTxnFields();
+                setTimeout(() => {
+                    const custSel = document.getElementById('customerSelect'); if (custSel) custSel.value = customerId;
+                    if (window._refreshCustomerSelect2) window._refreshCustomerSelect2();
+                    const amtInput = document.getElementById('txnAmount'); if (amtInput) amtInput.value = payableAmt;
+                    txnCategory.style.boxShadow = "0 0 12px #10b981"; setTimeout(() => txnCategory.style.boxShadow = "none", 2500);
+                    const ref = genRefundRef('PAY');
+                    localStorage.setItem('erp_pending_refund_step', JSON.stringify({
+                        trackId: String(trackId), step: 2, expectType: 'refund_customer', genId: ref, amount: parseFloat(payableAmt) || 0, armed: false
+                    }));
+                    alert(`✔️ STEP 1 already completed (Received from Supplier — Receipt No: ${rec.step1.id}).\n\nSTEP 2 of 2 — PAY REFUND TO CUSTOMER\nThe form is now filled to pay ${payableAmt} to the customer.\nReview and click "Save Transaction" to finish the refund cycle.\n\nThis step will be recorded as Payment No: ${ref}.`);
+                }, 120);
+            }
+        }
+
+        function renderLatestFollowups() {
+            let db = getRefundDb();
+            document.querySelectorAll('tr[id^="rfRow_"]').forEach(row => {
+                let trackId = row.id.split('_')[1];
+                if (!db[trackId]) return;
+                let rec = normalizeRefundRecord(db[trackId]);
+                const fullyDone = rec.step1.done && (rec.step2.done || rec.no_customer_step);
+
+                // Status badge block (idempotent — written into a dedicated span so it never duplicates)
+                let badge = document.getElementById('refundStatusBadge_' + trackId);
+                if (badge) {
+                    if (fullyDone) {
+                        row.classList.add('row-completed');
+                        let b = `<span class="badge-green" style="display:inline-block; margin-bottom:4px;">✅ Process Completed</span><br>`;
+                        b += `<span style="font-size:11px; color:#047857; font-weight:bold;">Step 1 Ref: ${rec.step1.id || '—'}</span><br>`;
+                        if (!rec.no_customer_step) b += `<span style="font-size:11px; color:#047857; font-weight:bold;">Step 2 Ref: ${rec.step2.id || '—'}</span><br>`;
+                        badge.innerHTML = b;
+                    } else if (rec.step1.done) {
+                        row.classList.remove('row-completed');
+                        badge.innerHTML = `<span style="background:#fef3c7; color:#92400e; padding:3px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-bottom:4px;">☑️ Step 1 Completed — Step 2 Pending</span><br><span style="font-size:11px; color:#92400e; font-weight:bold;">Step 1 Ref: ${rec.step1.id || '—'}</span><br>`;
+                    } else {
+                        row.classList.remove('row-completed');
+                        badge.innerHTML = '';
+                    }
+                }
+
+                if (rec.history.length > 0) { const latest = rec.history[0]; let latestEl = document.getElementById('latest_fu_' + trackId); if (latestEl) { latestEl.innerHTML = `<strong style="color:#8b5cf6;">[${latest.method}]:</strong> ${latest.desc}`; } }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderLatestFollowups();
+            initPagination();
+            recalcLedgerTotal();
+            const urlParams = new URLSearchParams(window.location.search);
+            localStorage.removeItem('erp_pending_refund_step2'); // clean up any legacy pending key
+
+            // Finalize a refund step that was just saved. The step was "armed" on form submit;
+            // now that the page has reloaded (proving the transaction was posted) we mark it
+            // complete and assign its reference number. We do NOT auto-fill the next step —
+            // the user clicks "Receive & Pay" again to advance to Step 2.
+            let refundStepFinalized = false;
+            try {
+                const pend = JSON.parse(localStorage.getItem('erp_pending_refund_step') || 'null');
+                if (pend && pend.armed) {
+                    localStorage.removeItem('erp_pending_refund_step');
+                    let db = getRefundDb();
+                    let rec = normalizeRefundRecord(db[pend.trackId]);
+                    const now = refundNowStamp();
+                    if (pend.step === 1 && !rec.step1.done) {
+                        rec.step1 = { done: true, id: pend.genId, time: now, amount: pend.amount };
+                        rec.receipt_no = pend.genId; // keep legacy field in sync
+                        rec.history.unshift({ time: now, method: 'System', desc: `✅ STEP 1 completed — Received refund from supplier. Receipt No: ${pend.genId} (Amount: ${pend.amount})` });
+                    } else if (pend.step === 2 && !rec.step2.done) {
+                        rec.step2 = { done: true, id: pend.genId, time: now, amount: pend.amount };
+                        rec.history.unshift({ time: now, method: 'System', desc: `✅ STEP 2 completed — Paid refund to customer. Payment No: ${pend.genId} (Amount: ${pend.amount})` });
+                    }
+                    db[pend.trackId] = rec; saveRefundDb(db);
+                    renderLatestFollowups();
+                    refundStepFinalized = true;
+
+                    const fullyDone = rec.step1.done && (rec.step2.done || rec.no_customer_step);
+                    setTimeout(() => {
+                        if (fullyDone) {
+                            let msg = `🎉 REFUND PROCESS FULLY COMPLETED.\n\nSTEP 1 (Received from Supplier) — Receipt No: ${rec.step1.id}`;
+                            if (rec.step2.done) msg += `\nSTEP 2 (Paid to Customer) — Payment No: ${rec.step2.id}`;
+                            alert(msg);
+                        } else if (pend.step === 1) {
+                            alert(`✅ STEP 1 COMPLETED — Refund received from supplier.\nReceipt No: ${pend.genId}\n\nNow click "Receive & Pay" again on the same row to process STEP 2 (pay the customer).`);
+                        } else {
+                            alert(`✅ STEP 2 COMPLETED — Refund paid to customer.\nPayment No: ${pend.genId}`);
+                        }
+                    }, 400);
+                }
+            } catch (err) {}
+
+            // Auto-fill logic from Invoice -> Receipt redirect (skipped if a refund step just finalized)
+            if (!refundStepFinalized && urlParams.has('cust_id')) {
+                document.getElementById('txnCategory').value = 'receipt';
+                toggleTxnFields();
+                document.getElementById('customerSelect').value = urlParams.get('cust_id');
+                // Select2 renders its own box: a native .value assignment does not repaint it,
+                // so without this the name stayed on "-- Choose Customer --".
+                if (window._refreshCustomerSelect2) window._refreshCustomerSelect2();
+                document.getElementById('txnAmount').value = urlParams.get('amount') || 0;
+                fetchInvoices().then(() => {
+                    setTimeout(() => { calculateAdjustment(); document.getElementById('txnAmount').focus(); }, 500);
+                });
+            }
+        });
+
+        // ============================================================
+        // BILINGUAL A5 VOUCHER (Receipt / Payment Format 2)
+        // ============================================================
+        // Category -> "Being" wording, English and Arabic.
+        const BEING_LABELS = {
+            receipt: ['Customer payment against invoice', 'دفعة من العميل مقابل فاتورة'],
+            advance_receipt: ['Customer advance / deposit', 'دفعة مقدمة / عربون من العميل'],
+            refund_supplier: ['Refund received from supplier', 'استرداد مبلغ من المورد'],
+            room_rent_col: ['Property / room rent collection', 'تحصيل إيجار عقار / غرفة'],
+            utility_water: ['Water bill collection', 'تحصيل فاتورة المياه'],
+            utility_elec: ['Electricity bill collection', 'تحصيل فاتورة الكهرباء'],
+            misc_income: ['Miscellaneous income', 'إيرادات متنوعة'],
+            money_receipt: ['Money receipt (not income)', 'قبض نقدي (ليس إيراداً)'],
+            adjustment_invoice: ['Adjustment against customer credit', 'تسوية من رصيد العميل'],
+            payment: ['Supplier payment', 'دفعة للمورد'],
+            advance_payment: ['Supplier advance', 'دفعة مقدمة للمورد'],
+            refund_customer: ['Refund paid to customer', 'رد مبلغ للعميل'],
+            vehicle_emi: ['Vehicle EMI payment', 'قسط تمويل المركبة'],
+            car_maintenance: ['Vehicle maintenance expense', 'مصروف صيانة المركبة'],
+            registration_expense: ['Registration expenses', 'مصروفات التسجيل'],
+            misc_expense: ['Miscellaneous expenses', 'مصروفات متنوعة'],
+            room_water_payment: ['Room water payment', 'دفع فاتورة مياه الغرفة'],
+            room_elec_payment: ['Room electricity payment', 'دفع فاتورة كهرباء الغرفة'],
+            room_wifi_payment: ['Room WiFi payment', 'دفع اشتراك الإنترنت للغرفة'],
+            room_tax_payment: ['Room tax payment', 'دفع ضريبة الغرفة'],
+            salary_payment: ['Salary payment', 'دفع الرواتب'],
+            payout: ['Payout (not an expense)', 'صرف نقدي (ليس مصروفاً)'],
+            cash_to_bank: ['Cash deposited into bank', 'إيداع نقدي في البنك'],
+            bank_to_cash: ['Cash withdrawn from bank', 'سحب نقدي من البنك']
+        };
+        const MODE_AR = { 'Cash': 'نقداً', 'Petty Cash': 'نثرية', 'Bank Transfer': 'تحويل بنكي', 'POS Payment': 'نقاط البيع', 'Cheque': 'شيك', 'Capital/Loan Account': 'حساب رأس المال', 'On A/C': 'على الحساب', 'Contra': 'قيد تحويل', 'Adjustment': 'تسوية' };
+        // Currency wording by ISO code; anything unknown falls back to the symbol itself.
+        // Arabic nouns carry four counted forms: [singular, dual, plural (3–10), accusative (11–99)].
+        const CURRENCY_WORDS = {
+            OMR: { en: ['Omani Rial', 'Omani Rials', 'Baisa', 'Baisa'],
+                   ar: [['ريال عُماني', 'ريالان عُمانيان', 'ريالات عُمانية', 'ريالاً عُمانياً'], ['بيسة', 'بيستان', 'بيسات', 'بيسة', 'واحدة']] },
+            AED: { en: ['Dirham', 'Dirhams', 'Fils', 'Fils'],
+                   ar: [['درهم', 'درهمان', 'دراهم', 'درهماً'], ['فلس', 'فلسان', 'فلوس', 'فلساً']] },
+            SAR: { en: ['Saudi Riyal', 'Saudi Riyals', 'Halala', 'Halalas'],
+                   ar: [['ريال سعودي', 'ريالان سعوديان', 'ريالات سعودية', 'ريالاً سعودياً'], ['هللة', 'هللتان', 'هللات', 'هللة', 'واحدة']] },
+            QAR: { en: ['Qatari Riyal', 'Qatari Riyals', 'Dirham', 'Dirhams'],
+                   ar: [['ريال قطري', 'ريالان قطريان', 'ريالات قطرية', 'ريالاً قطرياً'], ['درهم', 'درهمان', 'دراهم', 'درهماً']] },
+            KWD: { en: ['Kuwaiti Dinar', 'Kuwaiti Dinars', 'Fils', 'Fils'],
+                   ar: [['دينار كويتي', 'ديناران كويتيان', 'دنانير كويتية', 'ديناراً كويتياً'], ['فلس', 'فلسان', 'فلوس', 'فلساً']] },
+            BHD: { en: ['Bahraini Dinar', 'Bahraini Dinars', 'Fils', 'Fils'],
+                   ar: [['دينار بحريني', 'ديناران بحرينيان', 'دنانير بحرينية', 'ديناراً بحرينياً'], ['فلس', 'فلسان', 'فلوس', 'فلساً']] },
+            INR: { en: ['Rupee', 'Rupees', 'Paisa', 'Paise'],
+                   ar: [['روبية', 'روبيتان', 'روبيات', 'روبية', 'واحدة'], ['بيسة', 'بيستان', 'بيسات', 'بيسة', 'واحدة']] },
+            USD: { en: ['US Dollar', 'US Dollars', 'Cent', 'Cents'],
+                   ar: [['دولار أمريكي', 'دولاران أمريكيان', 'دولارات أمريكية', 'دولاراً أمريكياً'], ['سنت', 'سنتان', 'سنتات', 'سنتاً']] },
+            EUR: { en: ['Euro', 'Euros', 'Cent', 'Cents'],
+                   ar: [['يورو', 'يوروان', 'يوروات', 'يورو'], ['سنت', 'سنتان', 'سنتات', 'سنتاً']] },
+            GBP: { en: ['Pound Sterling', 'Pounds Sterling', 'Penny', 'Pence'],
+                   ar: [['جنيه إسترليني', 'جنيهان إسترلينيان', 'جنيهات إسترلينية', 'جنيهاً إسترلينياً'], ['بنس', 'بنسان', 'بنسات', 'بنساً']] }
+        };
+        // "<number> <noun>" in Arabic: 1 and 2 use the noun alone (singular + واحد / dual);
+        // 3–10 take the plural; 11–99 the accusative singular; round hundreds/thousands
+        // and remainders of 1–2 take the plain singular (مائة ريال, مائة وواحد ريال).
+        function arCounted(n, forms) {
+            if (n === 1) return forms[0] + ' ' + (forms[4] || 'واحد');   // feminine nouns carry واحدة
+            if (n === 2) return forms[1];
+            const r = n % 100;
+            const noun = (r >= 3 && r <= 10) ? forms[2] : (r >= 11 ? forms[3] : forms[0]);
+            return numToWordsAr(n) + ' ' + noun;
+        }
+
+        // ---- English number to words (0 – 999,999,999) ----
+        function numToWordsEn(n) {
+            n = Math.floor(Math.abs(n));
+            if (n === 0) return 'Zero';
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const chunk = c => {
+                let s = '';
+                if (c >= 100) { s += ones[Math.floor(c / 100)] + ' Hundred'; c %= 100; if (c) s += ' and '; }
+                if (c >= 20) { s += tens[Math.floor(c / 10)]; if (c % 10) s += '-' + ones[c % 10]; }
+                else if (c > 0) s += ones[c];
+                return s;
+            };
+            const parts = [];
+            const m = Math.floor(n / 1000000), t = Math.floor((n % 1000000) / 1000), r = n % 1000;
+            if (m) parts.push(chunk(m) + ' Million');
+            if (t) parts.push(chunk(t) + ' Thousand');
+            if (r) parts.push((parts.length && r < 100 ? 'and ' : '') + chunk(r));
+            return parts.join(' ');
+        }
+
+        // ---- Arabic number to words (0 – 999,999,999), conventional voucher form ----
+        function numToWordsAr(n) {
+            n = Math.floor(Math.abs(n));
+            if (n === 0) return 'صفر';
+            const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+            const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+            const hundreds = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+            const chunk = c => {
+                const p = [];
+                if (c >= 100) { p.push(hundreds[Math.floor(c / 100)]); c %= 100; }
+                if (c >= 20) { if (c % 10) p.push(ones[c % 10]); p.push(tens[Math.floor(c / 10)]); }
+                else if (c > 0) p.push(ones[c]);
+                return p.join(' و');
+            };
+            // Scale words follow the same counted-noun agreement as any other noun.
+            const scale = (c, one, two, few, many) => {
+                if (c === 1) return one;
+                if (c === 2) return two;
+                const r = c % 100;
+                return chunk(c) + ' ' + ((r >= 3 && r <= 10) ? few : (r >= 11 ? many : one));
+            };
+            const parts = [];
+            const m = Math.floor(n / 1000000), t = Math.floor((n % 1000000) / 1000), r = n % 1000;
+            if (m) parts.push(scale(m, 'مليون', 'مليونان', 'ملايين', 'مليوناً'));
+            if (t) parts.push(scale(t, 'ألف', 'ألفان', 'آلاف', 'ألفاً'));
+            if (r) parts.push(chunk(r));
+            return parts.join(' و');
+        }
+
+        // Full bilingual amount-in-words for the company currency, e.g.
+        // "Two Hundred Fifty Omani Rials and Five Hundred Baisa Only".
+        function amountInWords(amount) {
+            const decimals = window.CURRENCY_DECIMALS || 2;
+            const code = (window.CURRENCY_CODE || '').toUpperCase();
+            const sym = window.CURRENCY_SYMBOL || code || '';
+            const cw = CURRENCY_WORDS[code] || { en: [sym, sym, 'Cent', 'Cents'], ar: [[sym, sym, sym, sym], ['سنت', 'سنتان', 'سنتات', 'سنتاً']] };
+            const whole = Math.floor(Math.abs(amount) + 1e-9);
+            const frac = Math.round((Math.abs(amount) - whole) * Math.pow(10, decimals));
+            let en = numToWordsEn(whole) + ' ' + (whole === 1 ? cw.en[0] : cw.en[1]);
+            if (frac) en += ' and ' + numToWordsEn(frac) + ' ' + (frac === 1 ? cw.en[2] : cw.en[3]);
+            en += ' Only';
+            let ar = arCounted(whole, cw.ar[0]);
+            if (frac) ar += ' و' + arCounted(frac, cw.ar[1]);
+            ar += ' فقط لا غير';
+            return { en, ar };
+        }
+
+        // Builds the A5 landscape bilingual voucher used by Receipt / Payment Format 2.
+        function buildBilingualVoucher(d, isReceipt, ctx) {
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+            const col = isReceipt ? '#1e3a8a' : '#9a3412', soft = isReceipt ? '#eef2ff' : '#fff7ed';
+            const absAmount = Math.abs(d.amount);
+            const words = amountInWords(absAmount);
+            const cat = d.category || '';
+            const being = BEING_LABELS[cat] || [String(d.type || '').split(' - ')[0], ''];
+            const remarks = (d.remarks && d.remarks !== 'None') ? d.remarks : '';
+            const entity = (d.entityName && d.entityName !== 'None' && d.entityName !== 'General') ? d.entityName : (isReceipt ? 'Walk-in / General' : 'General');
+            const mode = d.mode || '';
+            const fmtDate = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? `${m[3]} / ${m[2]} / ${m[1]}` : (s || ''); };
+            // The five modes that normally apply on each side; the row's own mode is always shown.
+            const modeList = isReceipt
+                ? ['Cash', 'Bank Transfer', 'POS Payment', 'Cheque', 'On A/C']
+                : ['Cash', 'Petty Cash', 'Bank Transfer', 'Cheque', 'Capital/Loan Account'];
+            if (mode && !modeList.includes(mode)) modeList.push(mode);
+            const modesHtml = modeList.map(m => `<div class="bv-mode"><span class="bv-chk">${m === mode ? '✓' : ''}</span>${esc(m === 'Capital/Loan Account' ? 'Capital A/C' : m)} <span class="bv-ar">${esc(MODE_AR[m] || '')}</span></div>`).join('');
+            const sig = isReceipt
+                ? [['Depositor\'s Signature', 'توقيع الدافع'], ['Accountant', 'المحاسب'], ['Received by (Name &amp; Sign)', 'المستلم (الاسم والتوقيع)']]
+                : [['Prepared by', 'أعده'], ['Approved by', 'اعتمده'], ['Received by (Payee Name &amp; Sign)', 'المستلم (اسم المستفيد وتوقيعه)']];
+            const ref3 = d.chequeNo ? ['Cheque Date / تاريخ الشيك', fmtDate(d.chequeDate)] : (d.bankName ? ['Reference / المرجع', ''] : ['Cost Centre / مركز التكلفة', '']);
+            return `
+<style>
+  @page { size: A5 landscape; margin: 7mm; }
+  .bv { width: 196mm; min-height: 130mm; margin: 0 auto; padding: 5mm 6mm 4mm; font-family: 'Noto Naskh Arabic', 'Segoe UI', Tahoma, Arial, sans-serif; color: #111827; box-sizing: border-box; display: flex; flex-direction: column; position: relative; background: #fff; }
+  .bv .ar { direction: rtl; unicode-bidi: isolate; }
+  .bv-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; border-bottom: 3px double ${col}; padding-bottom: 6px; }
+  .bv-head .en { text-align: left; } .bv-head .arh { text-align: right; }
+  .bv-name { font-weight: 700; font-size: 15px; color: ${col}; line-height: 1.2; }
+  .bv-sub { font-size: 10px; color: #475569; line-height: 1.4; }
+  .bv-logo { margin: 0 14px; display: flex; align-items: center; justify-content: center; }
+  .bv-logo img { max-height: 58px; max-width: 120px; }
+  .bv-title { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 7px 0 6px; }
+  .bv-t-en { font-size: 17px; font-weight: 700; letter-spacing: 3px; color: ${col}; text-transform: uppercase; text-align: center; }
+  .bv-t-ar { font-size: 19px; font-weight: 700; color: ${col}; text-align: center; }
+  .bv-meta { font-size: 11.5px; } .bv-meta .row { display: flex; gap: 6px; align-items: baseline; margin: 2px 0; } .bv-meta.right .row { justify-content: flex-end; }
+  .bv-lbl { color: #475569; } .bv-serial { color: #dc2626; font-weight: 700; letter-spacing: 1px; font-size: 13px; }
+  .bv-box { border: 1px solid #94a3b8; padding: 1px 8px; min-width: 100px; display: inline-block; text-align: center; background: #fafafa; }
+  .bv-body { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+  .bv-line { display: grid; grid-template-columns: 112px 1fr 168px; align-items: end; }
+  .bv-line .l-en { color: #334155; font-weight: 700; font-size: 11px; } .bv-line .l-ar { color: #334155; font-weight: 700; font-size: 12.5px; text-align: right; }
+  .bv-line .val { border-bottom: 1px dotted #64748b; padding: 0 8px 2px; min-height: 18px; font-weight: 700; color: #0f172a; font-size: 12px; line-height: 1.4; }
+  .bv-line .val .ar-inline { font-weight: 400; color: #334155; }
+  .bv-amount { display: grid; grid-template-columns: 1fr 190px; gap: 12px; }
+  .bv-words { border: 1px solid #94a3b8; background: ${soft}; padding: 5px 10px; font-size: 11.5px; line-height: 1.45; }
+  .bv-words .w-ar { text-align: right; direction: rtl; font-size: 13px; }
+  .bv-amt { border: 2px solid ${col}; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .bv-amt .cur { font-size: 10px; color: #475569; letter-spacing: 2px; } .bv-amt .num { font-size: 24px; font-weight: 700; color: ${col}; } .bv-amt .cur-ar { font-size: 11.5px; color: #475569; }
+  .bv-modes { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; border: 1px solid #cbd5e1; padding: 4px 8px; background: #fafafa; flex-wrap: wrap; gap: 4px 8px; }
+  .bv-mode { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .bv-chk { width: 12px; height: 12px; border: 1.5px solid #334155; display: inline-block; text-align: center; line-height: 10px; font-size: 10px; font-weight: 700; color: ${col}; }
+  .bv-mode .bv-ar { font-size: 11px; color: #334155; }
+  .bv-ref { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 11px; }
+  .bv-ref .f { display: flex; gap: 6px; align-items: baseline; } .bv-ref .f .bv-lbl { white-space: nowrap; } .bv-ref .f .v { border-bottom: 1px dotted #64748b; flex: 1; font-weight: 700; padding: 0 4px; min-height: 14px; }
+  .bv-sigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 8px; }
+  .bv-sig { text-align: center; font-size: 10.5px; color: #334155; } .bv-sig .ln { border-top: 1px solid #334155; margin: 28px 8px 3px; } .bv-sig .s-ar { font-size: 12px; }
+  .bv-foot { display: flex; justify-content: space-between; font-size: 9px; color: #64748b; margin-top: 5px; border-top: 1px solid #e2e8f0; padding-top: 3px; }
+  .bv-stamp { position: absolute; right: 60px; bottom: 100px; border: 2px solid rgba(220,38,38,.55); color: rgba(220,38,38,.65); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: 3px; transform: rotate(-12deg); }
+</style>
+<div class="bv">
+  <div class="bv-head">
+    <div class="en">${ctx.companyHeaderHtml ? `<div class="bv-sub" style="color:#111827;">${ctx.companyHeaderHtml}</div>` : `<div class="bv-name">${esc(ctx.companyName)}</div>`}</div>
+    <div class="bv-logo">${ctx.logoUrl ? `<img src="${ctx.logoUrl}">` : ''}</div>
+    <div class="arh ar">${ctx.companyHeaderAr ? `<div class="bv-sub" style="color:#111827;">${ctx.companyHeaderAr}</div>` : (ctx.companyNameAr ? `<div class="bv-name">${esc(ctx.companyNameAr)}</div>` : '')}</div>
+  </div>
+  <div class="bv-title">
+    <div class="bv-meta">
+      <div class="row"><span class="bv-lbl">No. / الرقم:</span> <span class="bv-serial">${esc(d.docNum)}</span></div>
+      <div class="row"><span class="bv-lbl">Date / التاريخ:</span> <span class="bv-box">${esc(fmtDate(d.date))}</span></div>
+    </div>
+    <div><div class="bv-t-en">${isReceipt ? 'Receipt Voucher' : 'Payment Voucher'}</div><div class="bv-t-ar ar">${isReceipt ? 'سند قبض' : 'سند صرف'}</div></div>
+    <div class="bv-meta right">
+      <div class="row"><span class="bv-lbl">Txn ID / رقم القيد:</span> <span class="bv-box">#${esc(d.id)}</span></div>
+      <div class="row"><span class="bv-lbl">Mode / طريقة الدفع:</span> <span class="bv-box">${esc(mode || '—')}</span></div>
+    </div>
+  </div>
+  <div class="bv-body">
+    <div class="bv-line">
+      <div class="l-en">${isReceipt ? 'Received from' : 'Paid to'}</div>
+      <div class="val">${esc(entity)}</div>
+      <div class="l-ar ar">${isReceipt ? 'استلمنا من السيد / السادة' : 'يُصرف إلى السيد / السادة'}</div>
+    </div>
+    <div class="bv-amount">
+      <div class="bv-words">
+        <div><b>The sum of:</b> ${esc(words.en)}</div>
+        <div class="w-ar"><b>مبلغ وقدره:</b> ${esc(words.ar)}</div>
+      </div>
+      <div class="bv-amt"><div class="cur">AMOUNT · ${esc(window.CURRENCY_CODE || window.CURRENCY_SYMBOL)}</div><div class="num">${absAmount.toFixed(window.CURRENCY_DECIMALS)}</div><div class="cur-ar ar">المبلغ</div></div>
+    </div>
+    <div class="bv-line">
+      <div class="l-en">Being</div>
+      <div class="val">${esc(being[0])}${remarks ? ' — ' + esc(remarks) : ''}${being[1] ? `<div class="ar ar-inline" style="text-align:right; font-size:12.5px;">${esc(being[1])}${remarks ? ' — ' + esc(remarks) : ''}</div>` : ''}</div>
+      <div class="l-ar ar">وذلك عن</div>
+    </div>
+    <div class="bv-modes">${modesHtml}</div>
+    <div class="bv-ref">
+      <div class="f"><span class="bv-lbl">Cheque No. / رقم الشيك:</span><span class="v">${esc(d.chequeNo || '—')}</span></div>
+      <div class="f"><span class="bv-lbl">Bank / البنك:</span><span class="v">${esc(d.bankName || d.capitalName || '—')}</span></div>
+      <div class="f"><span class="bv-lbl">${ref3[0]}:</span><span class="v">${esc(ref3[1] || '—')}</span></div>
+    </div>
+  </div>
+  <div class="bv-stamp">${isReceipt ? 'RECEIVED · تم القبض' : 'PAID · تم الصرف'}</div>
+  <div class="bv-sigs">${sig.map(s => `<div class="bv-sig"><div class="ln"></div>${s[0]}<br><span class="s-ar ar">${s[1]}</span></div>`).join('')}</div>
+  <div class="bv-foot">
+    <span>${isReceipt ? 'Original – Customer | Copy – Accounts' : 'Original – Accounts | Copy – Payee'} | ${esc(ctx.companyName)}</span>
+    <span class="ar">${isReceipt ? 'الأصل – للعميل | نسخة – للحسابات' : 'الأصل – للحسابات | نسخة – للمستفيد'} | مستند صادر إلكترونياً</span>
+  </div>
+</div>`;
+        }
+
+        // ============================================================
+        // PRINT ENGINE (UPDATED FOR LOGO & ENTITY NAMES)
+        // ============================================================
+        let currentPrintData = null;
+
+        function triggerPrintFromData(btn) {
+            logTransactionAction(btn.getAttribute('data-id'), "Printed Transaction");
+            openPrintModal(
+                btn.getAttribute('data-id'),
+                btn.getAttribute('data-type'),
+                parseFloat(btn.getAttribute('data-amount')),
+                btn.getAttribute('data-date'),
+                btn.getAttribute('data-remarks'),
+                btn.getAttribute('data-entity'),
+                btn.getAttribute('data-docnum'),
+                { category: btn.getAttribute('data-category'), mode: btn.getAttribute('data-mode'), chequeNo: btn.getAttribute('data-cheque'),
+                  chequeDate: btn.getAttribute('data-chequedate'), bankName: btn.getAttribute('data-bankname'), capitalName: btn.getAttribute('data-capitalname') }
+            );
+        }
+
+        function openPrintModal(id, type, amount, date, remarks, entityName, docNum, extra) {
+            currentPrintData = Object.assign({ id, type, amount, date, remarks, entityName, docNum: docNum || ('RCP-' + id) }, extra || {});
+            const select = document.getElementById('printModalSelect');
+            select.innerHTML = '';
+            let isReceipt = amount > 0;
+
+            if (isReceipt) {
+                select.innerHTML = `<option value="receipt_style1">Receipt Format 1: A4 Corporate Voucher</option><option value="receipt_style2">Receipt Format 2: Bilingual A5 Voucher (English / Arabic)</option><option value="receipt_style3">Receipt Format 3: POS Thermal Slip (80mm)</option>`;
+                const settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+                if (settings.receiptStyle) select.value = 'receipt_' + settings.receiptStyle;
+            } else {
+                select.innerHTML = `<option value="payment_style1">Payment Format 1: Standard A4 Payment</option><option value="payment_style2">Payment Format 2: Bilingual A5 Voucher (English / Arabic)</option><option value="payment_style3">Payment Format 3: Simple Cash Slip</option>`;
+                const settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+                if (settings.paymentStyle) select.value = 'payment_' + settings.paymentStyle;
+            }
+            document.getElementById('printLayoutModal').style.display = 'flex';
+        }
+
+        function executePrintFromModal() {
+            const layout = document.getElementById('printModalSelect').value, d = currentPrintData, settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+            const globalRemarks = settings.globalRemarks || 'Thank you for your business.';
+            const companyName = "{{ current_company.company_name if current_company else 'Service Book ERP' }}";
+            const logoHtml = settings.companyLogo ? `<img src="${settings.companyLogo}" style="max-height:70px; max-width:200px; display:block; margin-bottom:10px;">` : '';
+            const companyHeaderHtml = (settings.companyHeaderHtml && settings.companyHeaderHtml.trim()) ? settings.companyHeaderHtml : '';
+            const documentNotes = (settings.documentNotes && settings.documentNotes.trim()) ? settings.documentNotes : globalRemarks;
+            const coBlock = (fallbackHtml) => companyHeaderHtml ? `<div style="line-height:1.45;">${companyHeaderHtml}</div>` : fallbackHtml;
+            
+            let html = '', isReceipt = d.amount > 0, title = isReceipt ? 'RECEIPT VOUCHER' : 'PAYMENT VOUCHER', absAmount = Math.abs(d.amount).toFixed(window.CURRENCY_DECIMALS), targetEntity = d.entityName && d.entityName !== 'None' ? d.entityName : 'Walk-in / General';
+
+            if (layout.includes('style1')) {
+                html = `<div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; border: 2px solid #1e3a8a; padding: 30px; color:#333;">
+                <div style="display:flex; justify-content:space-between; border-bottom:2px solid #ccc; padding-bottom:20px;">
+                    <div>${logoHtml}${coBlock(`<h1 style="color:#1e3a8a; margin:0;">${companyName}</h1>`)}</div>
+                    <div style="text-align:right;"><h2 style="margin:0;">${title}</h2><p style="margin:5px 0 0 0;">No: ${d.docNum}<br>Date: ${d.date}</p></div>
+                </div>
+                <div style="margin-top:30px; margin-bottom:30px; line-height:2;">
+                    <p><strong>Entity Name:</strong> <span style="font-size:18px;">${targetEntity}</span></p>
+                    <p><strong>Transaction Type:</strong> <span style="text-transform:uppercase;">${d.type.replace('_', ' ')}</span></p>
+                    <p><strong>Amount (${CURRENCY_SYMBOL}):</strong> <strong style="font-size:24px;">${absAmount}</strong></p>
+                    <p><strong>Remarks / Details:</strong> ${d.remarks || '-'}</p>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top:1px dashed #ccc; padding-top:40px; margin-top:40px;"><div style="width:40%; text-align:center; border-top:1px solid #333; padding-top:5px;">Receiver Signature</div><div style="width:40%; text-align:center; border-top:1px solid #333; padding-top:5px;">Authorized Signatory</div></div>
+            </div>`;
+            } else if (layout.includes('style2')) {
+                // Bilingual A5 landscape voucher (English / Arabic) — same layout for receipt & payment.
+                html = buildBilingualVoucher(d, isReceipt, {
+                    companyName: companyName,
+                    companyHeaderHtml: companyHeaderHtml,
+                    companyNameAr: settings.companyNameAr || '',
+                    companyHeaderAr: settings.companyHeaderArHtml || '',
+                    logoUrl: settings.companyLogo || ''
+                });
+            } else if (layout.includes('style3')) {
+                html = `<div style="font-family: monospace; max-width: 300px; margin: 0 auto; padding: 10px; color:#000;">
+                <div style="text-align:center; margin-bottom:5px;">${logoHtml}</div><div style="text-align:center;">${coBlock(`<h3 style="margin:0;">${companyName}</h3>`)}</div><h4 style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px; margin-top:10px;">${title}</h4>
+                <p>Date: ${d.date}<br>No: ${d.docNum}<br>Name: ${targetEntity}</p>
+                <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:10px 0; margin:10px 0;">Type: ${d.type.replace('_', ' ')}<br><br><strong>Amount (${CURRENCY_SYMBOL}): ${absAmount}</strong></div>
+                <p>Remarks: ${d.remarks || 'N/A'}</p><p style="text-align:center; font-size:10px; margin-top:20px;">Thank You</p>
+            </div>`;
+            }
+
+            if (!layout.includes('style2')) html += `<div style="max-width: 800px; margin: 30px auto 0 auto; font-size: 10px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 10px;">${documentNotes}</div>`;
+            document.getElementById('printLayer').innerHTML = html;
+            document.getElementById('printLayoutModal').style.display = 'none';
+
+            // Name the saved PDF: "Receipt/Payment - <document number> - <customer/supplier name> - <date>"
+            function sanitizeFileName(s) {
+                return String(s || '').replace(/[\/\\:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            const docLabel = isReceipt ? 'Receipt' : 'Payment';
+            const fileName = sanitizeFileName(`${docLabel} - ${d.docNum} - ${targetEntity} - ${d.date}`);
+            const originalTitle = document.title;
+            document.title = fileName;
+            function restoreTitle() { document.title = originalTitle; window.removeEventListener('afterprint', restoreTitle); }
+            window.addEventListener('afterprint', restoreTitle);
+            setTimeout(() => { window.print(); setTimeout(restoreTitle, 1000); }, 150);
+        }
+    </script>
+    <!-- READ-ONLY RECORD VIEW MODAL (shared) -->
+    <div id="recordViewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5000; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="background:#fff; border-radius:12px; width:100%; max-width:640px; max-height:88vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:2px solid #1e3a8a;">
+                <h3 id="recordViewTitle" style="margin:0; color:#1e3a8a; font-size:18px;">View</h3>
+                <button type="button" onclick="document.getElementById('recordViewModal').style.display='none'" style="background:#e2e8f0; border:none; width:30px; height:30px; border-radius:6px; cursor:pointer; font-weight:bold;">✕</button>
+            </div>
+            <div style="padding:8px 20px 4px; font-size:12px; color:#64748b;">🔒 View only — a read-only snapshot of what was entered. Use the ✏️ Edit action to make changes.</div>
+            <div id="recordViewBody" style="padding:8px 20px 18px;"></div>
+            <div style="display:flex; justify-content:flex-end; padding:0 20px 20px;">
+                <button type="button" onclick="document.getElementById('recordViewModal').style.display='none'" style="background:#1e3a8a; color:#fff; border:none; padding:9px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+    <script>
+function _rvEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
+
+// Opens a read-only popup showing a saved record exactly as it was entered.
+// Fetches JSON from the given view endpoint; nothing here can edit the record.
+async function openRecordView(url) {
+    var modal = document.getElementById('recordViewModal');
+    var body = document.getElementById('recordViewBody');
+    var titleEl = document.getElementById('recordViewTitle');
+    titleEl.textContent = 'Loading…';
+    body.innerHTML = '<p style="color:#64748b; padding:20px 0;">Loading…</p>';
+    modal.style.display = 'flex';
+    try {
+        var res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        var data = await res.json();
+        if (!data || !data.success) {
+            titleEl.textContent = 'Not Found';
+            body.innerHTML = '<p style="color:#ef4444; padding:16px 0;">' + _rvEsc((data && data.message) || 'Record not found.') + '</p>';
+            return;
+        }
+        titleEl.textContent = data.title || 'View';
+        var html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        (data.rows || []).forEach(function(pair){
+            html += '<tr>'
+                + '<td style="padding:8px 10px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:600; vertical-align:top; width:40%;">' + _rvEsc(pair[0]) + '</td>'
+                + '<td style="padding:8px 10px; border-bottom:1px solid #eef2f7; color:#0f172a; font-weight:600; word-break:break-word;">' + _rvEsc(pair[1]) + '</td>'
+                + '</tr>';
+        });
+        html += '</table>';
+        if (data.items && data.items.data && data.items.data.length) {
+            var cols = data.items.columns || [];
+            var rightCol = cols.map(function(c){ return /\(|amount|cost|selling|price|total|balance/i.test(c); });
+            html += '<div style="margin-top:16px; font-weight:700; color:#1e3a8a; font-size:13px;">Details</div>';
+            html += '<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;"><thead><tr>';
+            cols.forEach(function(c, i){ html += '<th style="background:#1e3a8a; color:#fff; padding:6px 8px; text-align:' + (rightCol[i]?'right':'left') + ';">' + _rvEsc(c) + '</th>'; });
+            html += '</tr></thead><tbody>';
+            data.items.data.forEach(function(row){
+                html += '<tr>';
+                row.forEach(function(cell, i){ html += '<td style="padding:6px 8px; border-bottom:1px solid #eef2f7; text-align:' + (rightCol[i]?'right':'left') + ';">' + _rvEsc(cell) + '</td>'; });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+        body.innerHTML = html;
+    } catch (e) {
+        titleEl.textContent = 'Error';
+        body.innerHTML = '<p style="color:#ef4444; padding:16px 0;">Could not load this record. Please try again.</p>';
+    }
+}
+    </script>
+
+
+<!-- Req #2: unified date/time picker (flatpickr) with a Today/Now button -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script>
+(function(){
+  // Set a date field's value AND keep flatpickr in sync (use this instead of el.value=... for date fields).
+  window.setDateVal = function(el, v){
+    if(!el) return;
+    el.value = v || '';
+    if(el._flatpickr){ if(v){ el._flatpickr.setDate(v, false); } else { el._flatpickr.clear(); } }
+  };
+  function cfg(isDT){
+    return {
+      allowInput: true,
+      time_24hr: true,
+      enableTime: isDT,
+      dateFormat: isDT ? 'Y-m-d\\TH:i' : 'Y-m-d',
+      onChange: function(sel, str, inst){
+        try{ inst.input.dispatchEvent(new Event('change', {bubbles:true})); inst.input.dispatchEvent(new Event('input', {bubbles:true})); }catch(e){}
+      },
+      onReady: function(sel, str, inst){
+        if(inst.calendarContainer.querySelector('.fp-today-btn')) return;
+        var b=document.createElement('div');
+        b.className='fp-today-btn';
+        b.textContent = isDT ? 'Now' : 'Today';
+        b.style.cssText='text-align:center;padding:8px;cursor:pointer;background:#2563eb;color:#fff;font-size:13px;font-weight:bold;';
+        b.addEventListener('click', function(){ inst.setDate(new Date(), true); if(!isDT) inst.close(); });
+        inst.calendarContainer.appendChild(b);
+      }
+    };
+  }
+  function initOn(el){
+    if(!el || el._flatpickr) return;
+    if(el.getAttribute('data-no-fp')!==null) return;   // opt-out hook
+    var isDT = (el.type==='datetime-local') || (el.getAttribute('data-fp')==='datetime');
+    var val = el.value;
+    el.setAttribute('data-fp', isDT ? 'datetime' : 'date');
+    try{ el.type='text'; }catch(e){}
+    if(val) el.value = val;
+    try{ flatpickr(el, cfg(isDT)); }catch(e){}
+  }
+  function initAll(root){
+    (root||document).querySelectorAll('input[type="date"],input[type="datetime-local"],input[data-fp]').forEach(initOn);
+  }
+  function boot(){
+    if(typeof flatpickr==='undefined') return;   // CDN blocked -> native inputs still work
+    initAll(document);
+    try{
+      var mo=new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          (m.addedNodes||[]).forEach(function(n){
+            if(n.nodeType!==1) return;
+            if(n.matches && (n.matches('input[type="date"]')||n.matches('input[type="datetime-local"]'))) initOn(n);
+            if(n.querySelectorAll) initAll(n);
+          });
+        });
+      });
+      mo.observe(document.body,{childList:true,subtree:true});
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+// Searchable customer dropdown on the receipt/payment page: live server search by
+// name / phone / ID number (same source as Booking, Invoice, and Add Customer).
+(function(){
+    function initReceiptCustomerSelect2(){
+        if(!window.jQuery || !jQuery.fn || !jQuery.fn.select2) return;   // CDN blocked -> native select still works
+        function _row(c){
+            if(c.loading) return c.text;
+            var $r = jQuery('<div></div>');
+            $r.append(jQuery('<div style="font-weight:600;"></div>').text(c.text || c.name || ''));
+            var extra = [];
+            if(c.phone) extra.push(c.phone);
+            if(c.id_number) extra.push('ID: ' + c.id_number);
+            if(extra.length) $r.append(jQuery('<div style="font-size:11px; color:#64748b;"></div>').text(extra.join('   \u2022   ')));
+            return $r;
+        }
+        try {
+            var $sel = jQuery('#customerSelect');
+            $sel.select2({
+                placeholder: "-- Choose Customer --",
+                width: '100%',
+                minimumInputLength: 0,
+                ajax: {
+                    url: '/api/search_customer',
+                    dataType: 'json',
+                    delay: 200,
+                    data: function(params){ return { q: params.term || '' }; },
+                    processResults: function(data){
+                        return { results: (data||[]).map(function(c){
+                            return { id: c.id, text: c.name, name: c.name, phone: c.phone, id_number: c.id_number, balance: c.balance };
+                        }) };
+                    },
+                    cache: true
+                },
+                templateResult: _row,
+                templateSelection: function(c){ return c.text || c.name || ''; }
+            });
+            // Keep data-balance on the chosen <option> so the credit alert in fetchInvoices keeps working.
+            $sel.on('select2:select', function(e){
+                var d = (e.params && e.params.data) ? e.params.data : null;
+                if(d && d.id != null){
+                    var opt = this.querySelector('option[value="'+d.id+'"]');
+                    if(opt && d.balance != null) opt.setAttribute('data-balance', d.balance);
+                }
+            });
+        } catch(e){}
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initReceiptCustomerSelect2);
+    else initReceiptCustomerSelect2();
+    window._refreshCustomerSelect2 = function(){
+        var el = document.getElementById('customerSelect');
+        if(!el) return;
+        if(!(window.jQuery && jQuery.fn && jQuery.fn.select2)) return;   // CDN blocked -> native select still shows the name
+        try {
+            var $el = jQuery(el);
+            if(!$el.data('select2')) initReceiptCustomerSelect2();
+            // Select2 keeps no live binding to the native <select>; a programmatic
+            // .value assignment only shows up once we tell it to re-read the element.
+            $el.trigger('change.select2');
+        } catch(e){}
+    };
+})();
+</script>
+</body>
+</html>

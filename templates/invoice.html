@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoicing & Billing - Service Book ERP</title>
+    <script>
+        const savedTheme = localStorage.getItem('erp_theme') || 'slate';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        :root, [data-theme="slate"] { --bg-body: #e0f2fe; --page-title: #1f2937; --btn-primary: #38bdf8; }
+        [data-theme="obsidian"] { --bg-body: #f8fafc; --page-title: #0f172a; --btn-primary: #cbd5e1; }
+        [data-theme="corporate"] { --bg-body: #f1f5f9; --page-title: #1e3a8a; --btn-primary: #2563eb; }
+        [data-theme="emerald"] { --bg-body: #ecfdf5; --page-title: #065f46; --btn-primary: #10b981; }
+        [data-theme="royal"] { --bg-body: #f5f3ff; --page-title: #3730a3; --btn-primary: #4f46e5; }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-body); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; align-items: center; margin-bottom: 20px; }
+        .header h2 { color: var(--page-title); margin: 0; font-weight: 800; text-transform: uppercase; }
+        .back-btn { background-color: #e2e8f0; color: #333; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; margin-right: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02); overflow-x: auto; }
+        .card-title { color: var(--page-title); font-size: 16px; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; align-items: flex-end; }
+        .form-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+        .form-col label { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .form-col input, .form-col select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; font-weight: bold; color: var(--page-title); }
+        .btn-save { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-receipt { background-color: var(--page-title); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 10px; }
+        .btn-add-row { background-color: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .customer-info { background: #e0f2fe; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: -5px; margin-bottom: 15px; display: none; border: 1px solid #bae6fd; }
+        .credit-warning { background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 15px; display: none; border: 1px solid #fecaca; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background-color: #f8fafc; padding: 12px 10px; font-size: 12px; border-bottom: 2px solid #e2e8f0; color: #475569; text-transform: uppercase; }
+        td { padding: 8px 10px; font-size: 13px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        .item-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 13px; outline: none; }
+        .action-btn { padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; margin-right: 5px; color: white; }
+        .btn-print { background-color: #3b82f6; }
+        .btn-del { background-color: #ef4444; }
+        .toolbar { background-color: #f8fafc; border-radius: 6px; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; outline: none; }
+        .btn-blue { background-color: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-excel { background-color: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+
+        /* Source type toggle inside table cell */
+        .source-type-sel { font-size: 11px !important; padding: 4px 6px !important; font-weight: bold !important; color: #1e3a8a !important; border-color: #1e3a8a !important; margin-bottom: 4px; }
+        .bank-badge { display: inline-block; background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; border-radius: 4px; font-size: 10px; font-weight: bold; padding: 2px 6px; margin-bottom: 4px; }
+
+        /* PAGINATION & MODALS */
+        .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; margin-bottom: 20px; }
+        .pagination-controls select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-weight:bold; color:var(--page-title); }
+        .pagination-controls button { padding: 4px 10px; margin-left: 5px; cursor: pointer; border: 1px solid #cbd5e1; background: white; border-radius: 4px; font-weight: bold; color: #333; transition: 0.2s;}
+        .pagination-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination-controls button:not(:disabled):hover { background: #e2e8f0; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 450px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-height: 90vh; overflow-y: auto;}
+        .select2-container .select2-selection--single { height: 40px !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; display: flex; align-items: center; }
+        .select2-selection__arrow { height: 38px !important; }
+
+        .history-log { margin-top: 15px; border-left: 2px solid #cbd5e1; padding-left: 15px; }
+        .history-item { margin-bottom: 15px; position: relative; }
+        .history-item::before { content: ''; position: absolute; left: -21px; top: 0; width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; }
+        .history-date { font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 2px; }
+        .history-desc { font-size: 13px; color: #333; }
+
+        /* MAGIC PRINT ISOLATION */
+        #printLayer { display: none; background: white; width: 100%; min-height: 100vh; position: absolute; top: 0; left: 0; z-index: 9999; padding: 40px; box-sizing: border-box; }
+        @media print {
+            body>.container { display: none !important; }
+            #printLayoutModal, #invoiceHistoryModal { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            #printLayer { display: block !important; position: static; padding: 0; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        .excel-only { display: none !important; }
+    </style>
+</head>
+
+<body>
+<script>
+/* Hydrate company print settings + logo from the server (the source of truth) into
+   localStorage, so saved settings persist across devices/users and the existing
+   print code (which reads localStorage) keeps working. Only overrides when the
+   server actually has saved settings, preserving any legacy local-only settings. */
+try {
+  var _srvPrintSettings = {{ (current_company.print_settings if current_company and current_company.print_settings else '')|tojson|safe }};
+  if (_srvPrintSettings) { localStorage.setItem('erp_print_settings', _srvPrintSettings); } else { localStorage.removeItem('erp_print_settings'); }
+  try { window.CURRENCY_SYMBOL = {{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$')|tojson|safe }}; } catch(e) { window.CURRENCY_SYMBOL = '$'; }
+  try { window.CURRENCY_DECIMALS = {{ (current_company.currency_decimals if current_company and current_company.currency_decimals is not none else 2)|tojson|safe }}; } catch(e) { window.CURRENCY_DECIMALS = 2; }
+} catch (e) {}
+</script>
+    <div class="container">
+        <div class="header no-print">
+            <a href="/" class="back-btn">← Dashboard</a>
+            <h2>Invoicing & Billing</h2>
+        </div>
+
+        <div class="card no-print" style="border-top: 4px solid var(--page-title);">
+            <div class="card-title">🧾 {% if edit_mode %}Edit Invoice INV-{{ prefill.id }}{% else %}Create Direct Itemized Invoice{% endif %}</div>
+
+            <div id="customerInfoPanel" class="customer-info">
+                <strong style="color:#0369a1;">Customer Insights:</strong> <span id="c_bal">Balance: 0.00</span> | <span id="c_lim">Credit Limit: 0.00</span>
+                <span id="advanceMsg" style="color:#059669; font-weight:bold; margin-left:15px; display:none;">✨ Unused Advance applied!</span>
+            </div>
+            <div id="creditWarning" class="credit-warning">⚠️ WARNING: This pushes the customer's balance over their Credit Limit!</div>
+
+            <form method="POST" action="/save_invoice" id="invoiceForm" onsubmit="return handleFormSubmit(event)">
+                <input type="hidden" name="edit_invoice_id" id="edit_invoice_id" value="{{ prefill.id if edit_mode else '' }}">
+
+                <div class="form-row">
+                    <div class="form-col" style="flex: 2;">
+                        <label>Select Customer *</label>
+                        <div style="display:flex; gap:8px; align-items:stretch;">
+                          <select name="customer_id" id="customer_id" required onchange="onCustomerChange()" style="width:100%;">
+                            <option value="">-- Choose Customer --</option>
+                            {% for c in customers %}<option value="{{ c.id }}" data-phone="{{ c.phone or '' }}" data-idnum="{{ c.id_number or '' }}" data-contact="{{ c.contact_person or '' }}" {% if prefill and prefill.customer_id==c.id %}selected{% endif %}>{{ c.name }}{% if c.advance_amount and c.advance_amount > 0 %} (Advance Paid: {{ "{:,.2f}".format(c.advance_amount) }}){% endif %}</option>{% endfor %}
+                          </select>
+                          <button type="button" onclick="openQuickAddCustomer()" title="Add new customer" style="background:#3b82f6; color:#fff; border:none; border-radius:6px; padding:0 16px; font-size:20px; font-weight:bold; cursor:pointer; line-height:1;">+</button>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <label>Invoice Date *</label>
+                        <input type="date" id="invoice_date" name="invoice_date" value="{{ current_date if edit_mode else '' }}" required>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="background: #f1f5f9; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Line Items / Services</span>
+                        <button type="button" class="btn-add-row" onclick="addRow()">+ Add New Service</button>
+                    </div>
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th width="18%">Service / Item</th>
+                                <th width="28%">Description / Details</th>
+                                <th width="22%"><span style="color:#ef4444;">Supplier / Source (Cost Tracking)</span></th>
+                                <th width="10%"><span style="color:#ef4444;">Net Cost</span></th>
+                                <th width="15%"><span style="color:#10b981;">Selling Price *</span></th>
+                                <th width="7%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            {% if prefill_bookings %}
+                            {% for b in prefill_bookings %}
+                            <tr>
+                                <td><input type="text" name="service_type[]" class="item-input" value="{{ b.service_type }}" readonly></td>
+                                <td>
+                                    <input type="text" name="description[]" class="item-input desc-input" value="{% if b.pnr_ref %} {{ b.pnr_ref }} | {% endif %}{{ b.passenger_details or '' }}" readonly>
+                                    <input type="hidden" name="booking_id[]" value="{{ b.id }}">
+                                </td>
+                                <td>
+                                    <select name="source_type[]" class="item-input source-type-sel" onchange="onSourceTypeChange(this)">
+                                        <option value="supplier" {% if not b.bank_account_id %}selected{% endif %}>Supplier</option>
+                                        <option value="bank" {% if b.bank_account_id %}selected{% endif %}>Credit Card / Bank</option>
+                                        <option value="none" {% if not b.supplier_id and not b.bank_account_id %}selected{% endif %}>None</option>
+                                    </select>
+                                    <select class="item-input source-value-sel" onchange="onSourceValueChange(this)" style="margin-top:4px;"></select>
+                                    <input type="hidden" name="supplier_id[]" value="{{ b.supplier_id or '' }}">
+                                    <input type="hidden" name="bank_account_id[]" value="{{ b.bank_account_id or '' }}">
+                                </td>
+                                <td><input type="number" name="buying_price[]" class="item-input calc-cost" value="{{ b.net_cost }}" readonly></td>
+                                <td>
+                                    <input type="number" name="selling_price[]" class="item-input calc-sell" value="{{ b.selling_price }}" oninput="calcTotal()" style="background-color: #dcfce7; border: 2px solid #10b981; color: #065f46; font-weight: 900; font-size: 15px;">
+                                </td>
+                                <td><button type="button" class="action-btn btn-del" onclick="this.closest('tr').remove(); calcTotal();">X</button></td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td><input type="text" name="service_type[]" class="item-input" placeholder="e.g. Visa, Flight..." required></td>
+                                <td>
+                                    <input type="text" name="description[]" class="item-input desc-input" placeholder="Details..." required>
+                                    <input type="hidden" name="booking_id[]" value="">
+                                </td>
+                                <td>
+                                    <select name="source_type[]" class="item-input source-type-sel" onchange="onSourceTypeChange(this)">
+                                        <option value="supplier">Supplier</option>
+                                        <option value="bank">Credit Card / Bank</option>
+                                        <option value="none">None</option>
+                                    </select>
+                                    <select class="item-input source-value-sel" onchange="onSourceValueChange(this)" style="margin-top:4px;"></select>
+                                    <input type="hidden" name="supplier_id[]" value="">
+                                    <input type="hidden" name="bank_account_id[]" value="">
+                                </td>
+                                <td><input type="number" name="buying_price[]" class="item-input calc-cost" placeholder="0.00" step="0.01" value="0"></td>
+                                <td>
+                                    <input type="number" name="selling_price[]" class="item-input calc-sell" placeholder="0.00" step="0.01" required oninput="calcTotal()" style="background-color: #dcfce7; border: 2px solid #10b981; color: #065f46; font-weight: 900; font-size: 15px;">
+                                </td>
+                                <td><button type="button" class="action-btn btn-del" onclick="this.closest('tr').remove(); calcTotal();">X</button></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <table class="totals-table" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <tr>
+                        <th style="background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border: 1px solid #cbd5e1;">Gross Total</th>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;"><input type="number" name="subtotal" id="subtotal" value="{{ '{:.2f}'.format(prefill.total_amount + discount) if edit_mode else '0.00' }}" readonly style="background:#f1f5f9; border:none; width:100%;"></td>
+
+                        <th style="background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border: 1px solid #cbd5e1;">Tax (VAT) Rate</th>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;">
+                            <select id="tax_rate" name="tax_rate" onchange="calcTotal()" style="width:100%; padding: 8px;">
+                                <option value="0" {% if prefill and (prefill.tax_rate == 0 or prefill.vat_rate == 0) %}selected{% endif %}>0% VAT</option>
+                                <option value="5" {% if prefill and (prefill.tax_rate == 5 or prefill.vat_rate == 5) %}selected{% endif %}>5% VAT</option>
+                                <option value="15" {% if prefill and (prefill.tax_rate == 15 or prefill.vat_rate == 15) %}selected{% endif %}>15% VAT</option>
+                                <option value="20" {% if prefill and (prefill.tax_rate == 20 or prefill.vat_rate == 20) %}selected{% endif %}>20% VAT</option>
+                            </select>
+                            <input type="hidden" name="tax_amount" id="tax_amount" value="{{ prefill.tax_amount if prefill and prefill.tax_amount else (prefill.vat_amount if prefill and prefill.vat_amount else '0.00') }}">
+                            <input type="hidden" name="vat_rate" id="vat_rate_hidden" value="0">
+                            <input type="hidden" name="vat_amount" id="vat_amount_hidden" value="0.00">
+                        </td>
+
+                        <th style="background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border: 1px solid #cbd5e1;">Discount Amount</th>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;"><input type="number" name="discount" id="discount" placeholder="0.00" step="0.01" value="{{ '{:.2f}'.format(discount) if edit_mode else '0' }}" oninput="calcTotal()" style="width:100%;"></td>
+
+                        <th style="background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border: 1px solid #cbd5e1;">Advance / Credit</th>
+                        <td style="padding: 12px; border: 1px solid #cbd5e1;"><input type="number" name="advance" id="advance" placeholder="0.00" step="0.01" value="{{ '{:.2f}'.format(prefill.total_paid) if edit_mode else '{:.2f}'.format(prefill_advance|default(0)) }}" oninput="calcTotal()" style="width:100%;"></td>
+                    </tr>
+                    <tr>
+                        <th style="background: #f8fafc; padding: 12px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border: 1px solid #cbd5e1;">Payment Remarks</th>
+                        <td colspan="5" style="padding: 12px; border: 1px solid #cbd5e1;"><input type="text" name="payment_remarks" id="payment_remarks" placeholder="Eg. Cheque #123, Bank Transfer" value="{{ prefill.remarks if edit_mode and prefill.remarks else '' }}" style="width:100%;"></td>
+                        <th style="background: #fee2e2; padding: 12px; text-align: center; font-size: 14px; color: #ef4444; font-weight: bold; text-transform: uppercase; border: 1px solid #cbd5e1;" colspan="2">Final Balance Due: <br> <h3 id="displayBalance" style="margin: 0; display: inline; font-size: 24px;">{{ "{:.2f}".format(prefill.balance_due) if edit_mode else '0.00' }}</h3></th>
+                    </tr>
+                </table>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <button type="submit" class="btn-save" id="saveBtn" onclick="logInvoiceAction('NEW', 'Saved Invoice')">💾 Save Invoice</button>
+                    <button type="submit" name="save_and_receipt" value="true" class="btn-receipt" id="saveRecBtn" onclick="logInvoiceAction('NEW', 'Saved & Generated Receipt')">💾 Save & Open Receipt</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card no-print">
+            <div class="card-title"><span>📚 Invoice Records & History</span></div>
+
+            <form method="GET" action="{{ url_for('invoice') }}" class="toolbar" id="invoiceFilterForm">
+                <div class="filter-group">
+                    <input type="text" name="search" id="searchInvInput" placeholder="🔍 Search Name, INV #, Remarks..." value="{{ search }}" style="width: 250px;">
+                    <input type="date" name="start_date" id="startDate" title="From Date" value="{{ start_date }}">
+                    <span style="color: #64748b; font-size: 11px; font-weight:bold;">TO</span>
+                    <input type="date" name="end_date" id="endDate" title="To Date" value="{{ end_date }}">
+                    <button type="submit" class="btn-blue">Search</button>
+                    <a href="{{ url_for('invoice') }}" class="btn-blue" style="text-decoration:none; padding:8px 12px; display:inline-block; text-align:center;">Clear</a>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <a href="{{ url_for('print_invoices', search=search, start_date=start_date, end_date=end_date) }}" target="_blank" rel="noopener" class="btn-blue" style="text-decoration:none; padding:8px 12px; display:inline-block; text-align:center;">🖨️ Print</a>
+                    <a href="{{ url_for('export_invoices', search=search, start_date=start_date, end_date=end_date) }}" class="btn-excel" style="text-decoration:none; padding:8px 12px; display:inline-block; text-align:center;">📊 Export to Excel</a>
+                </div>
+            </form>
+
+            <table id="invoiceTableObj">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Customer Name</th>
+                        <th class="excel-only">Net Cost ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                        <th>Selling Price ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                        <th class="excel-only">Profit ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                        <th>Amount Paid ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                        <th>Remarks</th>
+                        <th>Balance Due ({{ (current_company.currency_symbol if current_company and current_company.currency_symbol else '$') }})</th>
+                        <th class="no-excel">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+
+                    {% set ns = namespace(cost=0.0) %}
+                    {% if inv.items %}
+                        {% for i in inv.items %}{% set ns.cost = ns.cost + (i.net_cost or 0.0) %}{% endfor %}
+                    {% elif inv.bookings %}
+                        {% for b in inv.bookings %}{% set ns.cost = ns.cost + (b.net_cost or 0.0) %}{% endfor %}
+                    {% endif %}
+
+                    {% set profit = inv.total_amount - ns.cost %}
+
+                    <tr data-date="{{ inv.date_created.strftime('%Y-%m-%d') if inv.date_created else '' }}">
+                        <td style="font-weight:bold; color:var(--page-title);"><a href="javascript:void(0)" onclick="openRecordView('/api/invoice_view/{{ inv.id }}')" style="color:inherit; text-decoration:underline; cursor:pointer;" title="View invoice details (read-only)">INV-{{ inv.id }}</a></td>
+                        <td>{{ inv.date_created.strftime('%Y-%m-%d') if inv.date_created else '' }}</td>
+                        <td style="font-weight:bold;">{{ customers_dict.get(inv.customer_id, 'Unknown') }}</td>
+                        <td class="excel-only">{{ "{:,.2f}".format(ns.cost) }}</td>
+                        <td style="font-weight:bold;">{{ "{:,.2f}".format(inv.total_amount) }}</td>
+                        <td class="excel-only">{{ "{:,.2f}".format(profit) }}</td>
+                        <td style="color:#10b981; font-weight:bold;">{{ "{:,.2f}".format(inv.total_paid) }}</td>
+                        <td>{{ inv.remarks or '-' }}</td>
+                        <td style="color:#ef4444; font-weight:bold; font-size:15px;">{{ "{:,.2f}".format(inv.balance_due) }}</td>
+                        <td style="white-space: nowrap; display: flex; align-items: center; gap: 5px;" class="no-excel">
+
+                            <button type="button" class="action-btn" style="background:#475569;" title="View Invoice History" onclick="viewInvoiceHistory('{{ inv.id }}', '{{ inv.date_created.strftime('%Y-%m-%d %H:%M') if inv.date_created else '' }}')">👁️</button>
+
+                            {% set inv_items = inv.items if inv.items else (inv.bookings if inv.bookings else []) %}
+                            <button type="button" class="action-btn btn-print" style="cursor: pointer;"
+                                data-inv-id="{{ inv.id }}"
+                                data-cust-name="{{ customers_dict.get(inv.customer_id, 'Unknown') }}"
+                                data-total="{{ inv.total_amount }}"
+                                data-paid="{{ inv.total_paid }}"
+                                data-balance="{{ inv.balance_due }}"
+                                data-vat="{{ inv.tax_amount or inv.vat_amount or 0 }}"
+                                data-vat-rate="{{ inv.tax_rate or inv.vat_rate or 0 }}"
+                                data-date="{{ inv.date_created.strftime('%d-%b-%Y') if inv.date_created else '' }}"
+                                data-remarks="{{ inv.remarks or inv.description or '' }}"
+                                data-items='[{% for item in inv_items %}{"service_type":"{{ (item.service_type or "Professional Service") | replace("\'", "") | replace("\"", "") | replace("\n", " ") | replace("\r", " ") }}","description":"{{ (item.passenger_details or item.description or item.details or "General Booking") | replace("\'", "") | replace("\"", "") | replace("\n", " ") | replace("\r", " ") }}","qty":{{ item.qty or 1 }},"price":{{ item.selling_price or item.price or item.total_amount or inv.total_amount or 0 }},"total":{{ item.selling_price or item.price or item.total_amount or inv.total_amount or 0 }}}{% if not loop.last %},{% endif %}{% endfor %}]'
+                                onclick="openPrintModal(this)">🖨️ Print</button>
+
+                            {% if has_permission('Invoice_Edit') %}
+                            <a href="/edit_invoice/{{ inv.id }}" class="action-btn" style="background-color: #f59e0b; text-decoration: none;" onclick="logInvoiceAction('{{ inv.id }}', 'Opened in Edit Mode')">✏️ Edit</a>
+                            {% endif %}
+
+                            {% if has_permission('Invoice_Delete') %}
+                            <form action="/delete_invoice/{{ inv.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure? This will delete the invoice and reverse customer/supplier balances.');">
+                                <button type="submit" class="action-btn btn-del">❌ Del</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" style="text-align:center; padding: 20px; color:#64748b;">No invoices generated yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:bold; background:#f1f5f9; border-top:2px solid #cbd5e1;">
+                        <td colspan="3" style="text-align:right;">TOTAL (filtered)</td>
+                        <td class="excel-only"></td>
+                        <td style="font-weight:bold;">{{ "{:,.2f}".format(inv_tot_amount) }}</td>
+                        <td class="excel-only"></td>
+                        <td style="color:#10b981; font-weight:bold;">{{ "{:,.2f}".format(inv_tot_paid) }}</td>
+                        <td></td>
+                        <td style="color:#ef4444; font-weight:bold; font-size:15px;">{{ "{:,.2f}".format(inv_tot_balance) }}</td>
+                        <td class="no-excel"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            {% if pagination %}
+            <div class="pagination-controls" id="pagination-invoiceTableObj">
+                <div>
+                    <label style="font-size:12px; color:#64748b; font-weight:bold;">Rows per page:</label>
+                    <select onchange="window.location.href='?search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&page=1&per_page='+this.value">
+                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        <option value="-1" {% if per_page == -1 %}selected{% endif %}>All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <span id="page-info-invoiceTableObj" style="font-size:12px; color:#64748b; margin-right:10px; font-weight:bold;">
+                        Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} items)
+                    </span>
+                    <button type="button" id="prev-btn-invoiceTableObj" {% if not pagination.has_prev %}disabled{% endif %} onclick="window.location.href='?search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&per_page={{ per_page }}&page={{ pagination.prev_num }}'">Prev</button>
+                    <button type="button" id="next-btn-invoiceTableObj" {% if not pagination.has_next %}disabled{% endif %} onclick="window.location.href='?search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&per_page={{ per_page }}&page={{ pagination.next_num }}'">Next</button>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- PRINT LAYOUT MODAL -->
+    <div id="printLayoutModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; padding:25px; border-radius:8px; width:450px;">
+            <h3 style="color:#1e3a8a; margin-top:0;">🖨️ Print Settings & Layout</h3>
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold; color: #333; margin-bottom: 5px; display:block;">Select Print Format</label>
+                <select id="printModalSelect" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: bold; outline: none; cursor: pointer; color: #1e3a8a;">
+                    <option value="style1">Format 1: Modern Corporate (B&W)</option>
+                    <option value="style2">Format 2: Detailed Tax / Classic</option>
+                    <option value="style3">Format 3: Minimalist A4</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="document.getElementById('printLayoutModal').style.display='none'" style="background:white; border:1px solid #cbd5e1; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancel</button>
+                <button type="button" id="printNowBtn" style="background-color: #10b981; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Print Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVOICE HISTORY MODAL -->
+    <div id="invoiceHistoryModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#1e3a8a; border-bottom:1px solid #cbd5e1; padding-bottom:10px; margin-top:0;">👁️ Invoice Timeline History</h3>
+            <div id="invoiceHistoryContainer" class="history-log"></div>
+            <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+                <button type="button" onclick="document.getElementById('invoiceHistoryModal').style.display='none'" style="background:white; border:1px solid #cbd5e1; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printLayer"></div>
+
+    <script>
+        // ============================================================
+        // INIT
+        // ============================================================
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("invoice_date");
+            if (!dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            document.querySelectorAll('#itemsBody tr').forEach(function(tr){
+                const ts = tr.querySelector('.source-type-sel');
+                if (ts) initSourceRow(ts.closest('td'));
+            });
+            if (typeof calcTotal === 'function') calcTotal();
+        });
+
+        // ============================================================
+        // SOURCE TYPE TOGGLE (per line item)
+        // ============================================================
+        // One dropdown per line that switches between the supplier list and the bank/card list.
+        // The visible select is not submitted; its value is mirrored into the matching hidden
+        // field (supplier_id[] or bank_account_id[]) so the backend contract stays unchanged.
+        const SRC_SUPPLIERS = [{% for s in suppliers %}{id: "{{ s.id }}", name: {{ s.name|tojson }}},{% endfor %}];
+        const SRC_BANKS = [{% for ba in bank_accounts %}{id: "{{ ba.id }}", name: {{ (ba.bank_name ~ ' (' ~ (ba.card_ref or ba.account_number or '') ~ ')')|tojson }}},{% endfor %}];
+
+        function fillSourceValue(td, type, selectedId) {
+            const vsel = td.querySelector('.source-value-sel');
+            if (!vsel) return;
+            let html = '';
+            if (type === 'bank') {
+                html = '<option value="">-- Choose Bank/Card --</option>';
+                SRC_BANKS.forEach(function(b){ html += '<option value="' + b.id + '"' + (String(b.id) === String(selectedId) ? ' selected' : '') + '>' + b.name + '</option>'; });
+                vsel.style.display = '';
+                vsel.style.borderColor = '#f59e0b';
+            } else if (type === 'supplier') {
+                html = '<option value="">-- No Supplier --</option>';
+                SRC_SUPPLIERS.forEach(function(s){ html += '<option value="' + s.id + '"' + (String(s.id) === String(selectedId) ? ' selected' : '') + '>' + s.name + '</option>'; });
+                vsel.style.display = '';
+                vsel.style.borderColor = '';
+            } else {
+                html = '';
+                vsel.style.display = 'none';
+            }
+            vsel.innerHTML = html;
+        }
+
+        function syncSourceHidden(td) {
+            const type = td.querySelector('.source-type-sel').value;
+            const vsel = td.querySelector('.source-value-sel');
+            const val = vsel ? vsel.value : '';
+            const supHid = td.querySelector('input[name="supplier_id[]"]');
+            const bankHid = td.querySelector('input[name="bank_account_id[]"]');
+            if (supHid) supHid.value = (type === 'supplier') ? val : '';
+            if (bankHid) bankHid.value = (type === 'bank') ? val : '';
+        }
+
+        function onSourceTypeChange(sel) {
+            const td = sel.closest('td');
+            fillSourceValue(td, sel.value, '');
+            syncSourceHidden(td);
+        }
+
+        function onSourceValueChange(vsel) {
+            syncSourceHidden(vsel.closest('td'));
+        }
+
+        function initSourceRow(td) {
+            const typeSel = td.querySelector('.source-type-sel');
+            if (!typeSel) return;
+            const type = typeSel.value;
+            const supHid = td.querySelector('input[name="supplier_id[]"]');
+            const bankHid = td.querySelector('input[name="bank_account_id[]"]');
+            const selId = (type === 'bank') ? (bankHid ? bankHid.value : '') : (type === 'supplier' ? (supHid ? supHid.value : '') : '');
+            fillSourceValue(td, type, selId);
+        }
+
+        function toggleRowSource(sel) { onSourceTypeChange(sel); }
+
+        // ============================================================
+        // ADD ROW
+        // ============================================================
+        function addRow() {
+            const tbody = document.getElementById('itemsBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="service_type[]" class="item-input" placeholder="Service..." required></td>
+                <td>
+                    <input type="text" name="description[]" class="item-input desc-input" placeholder="Details..." required>
+                    <input type="hidden" name="booking_id[]" value="">
+                </td>
+                <td>
+                    <select name="source_type[]" class="item-input source-type-sel" onchange="onSourceTypeChange(this)">
+                        <option value="supplier">Supplier</option>
+                        <option value="bank">Credit Card / Bank</option>
+                        <option value="none">None</option>
+                    </select>
+                    <select class="item-input source-value-sel" onchange="onSourceValueChange(this)" style="margin-top:4px;"></select>
+                    <input type="hidden" name="supplier_id[]" value="">
+                    <input type="hidden" name="bank_account_id[]" value="">
+                </td>
+                <td><input type="number" name="buying_price[]" class="item-input calc-cost" placeholder="0.00" step="0.01" value="0"></td>
+                <td><input type="number" name="selling_price[]" class="item-input calc-sell" placeholder="0.00" step="0.01" required oninput="calcTotal()" style="background-color: #dcfce7; border: 2px solid #10b981; color: #065f46; font-weight: 900; font-size: 15px;"></td>
+                <td><button type="button" class="action-btn btn-del" onclick="this.closest('tr').remove(); calcTotal();">X</button></td>`;
+            tbody.appendChild(row);
+            const td = row.querySelector('.source-type-sel');
+            if (td) initSourceRow(td.closest('td'));
+        }
+
+        // ============================================================
+        // CALC TOTAL
+        // ============================================================
+        function calcTotal() {
+            let gross = 0;
+            document.querySelectorAll('.calc-sell').forEach(input => { gross += parseFloat(input.value) || 0; });
+            document.getElementById('subtotal').value = gross.toFixed(window.CURRENCY_DECIMALS);
+
+            let vatRate = parseFloat(document.getElementById('tax_rate').value) || 0;
+            let vatAmt = gross * (vatRate / 100);
+            document.getElementById('tax_amount').value = vatAmt.toFixed(window.CURRENCY_DECIMALS);
+
+            if (document.getElementById('vat_rate_hidden')) document.getElementById('vat_rate_hidden').value = vatRate;
+            if (document.getElementById('vat_amount_hidden')) document.getElementById('vat_amount_hidden').value = vatAmt.toFixed(window.CURRENCY_DECIMALS);
+
+            let totalWithVat = gross + vatAmt;
+            let disc = parseFloat(document.getElementById('discount').value) || 0;
+            let adv = parseFloat(document.getElementById('advance').value) || 0;
+            let newDue = totalWithVat - disc - adv;
+
+            document.getElementById('displayBalance').innerText = newDue.toFixed(window.CURRENCY_DECIMALS);
+
+            const cid = document.getElementById('customer_id').value;
+            const warningBox = document.getElementById('creditWarning');
+            if (cid && customerData[cid]) {
+                const c = customerData[cid];
+                if (c.limit > 0 && (c.balance + newDue) > c.limit) { warningBox.style.display = 'block'; }
+                else { warningBox.style.display = 'none'; }
+            }
+        }
+
+        // ============================================================
+        // CUSTOMER CHANGE
+        // ============================================================
+        function onCustomerChange() {
+            const cid = document.getElementById('customer_id').value;
+            const infoPanel = document.getElementById('customerInfoPanel');
+            const advMsg = document.getElementById('advanceMsg');
+            if (cid && customerData[cid]) {
+                const c = customerData[cid];
+                infoPanel.style.display = 'block';
+                document.getElementById('c_bal').innerText = `Current Balance: ${c.balance.toFixed(window.CURRENCY_DECIMALS)}`;
+                document.getElementById('c_lim').innerText = `Credit Limit: ${c.limit > 0 ? c.limit.toFixed(window.CURRENCY_DECIMALS) : 'Unlimited'}`;
+                if (c.balance < 0) {
+                    document.getElementById('advance').value = Math.abs(c.balance).toFixed(window.CURRENCY_DECIMALS);
+                    advMsg.style.display = 'inline';
+                } else {
+                    document.getElementById('advance').value = "0";
+                    advMsg.style.display = 'none';
+                }
+            } else {
+                infoPanel.style.display = 'none';
+                document.getElementById('advance').value = "0";
+            }
+            calcTotal();
+        }
+
+        // ============================================================
+        // FORM SUBMIT
+        // ============================================================
+        function handleFormSubmit(e) {
+            const cid = document.getElementById('customer_id').value;
+            if (cid && customerData[cid]) {
+                const c = customerData[cid];
+                let newDue = parseFloat(document.getElementById('displayBalance').innerText);
+                if (c.limit > 0 && (c.balance + newDue) > c.limit) {
+                    return confirm(`⚠️ CREDIT LIMIT EXCEEDED!\n\nThis pushes their balance over the limit.\nForce save anyway?`);
+                }
+            }
+            return true;
+        }
+
+        // ============================================================
+        // CUSTOMER DATA (Jinja)
+        // ============================================================
+        const customerData = {
+            {% for c in customers %}
+            "{{ c.id }}": {
+                name: {{ c.name | tojson }},
+                balance: {{ c.balance | float | tojson }},
+                limit: {{ c.credit_limit | float | tojson if c.credit_limit else 'null' }}
+            } {% if not loop.last %}, {% endif %}
+            {% endfor %}
+        };
+
+        const companyName = "{{ current_company.company_name if current_company else 'My Company LLC' }}";
+
+        // ============================================================
+        // INVOICE HISTORY
+        // ============================================================
+        function logInvoiceAction(id, desc) {
+            if (id === 'NEW') {
+                id = document.getElementById('edit_invoice_id').value;
+                if (!id) return;
+            }
+            let db = JSON.parse(localStorage.getItem('erp_invoice_history')) || {};
+            if (!db[id]) db[id] = [];
+            const timestamp = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            db[id].unshift({ time: timestamp, desc: desc });
+            localStorage.setItem('erp_invoice_history', JSON.stringify(db));
+        }
+
+        function viewInvoiceHistory(id, createdDate) {
+            let container = document.getElementById('invoiceHistoryContainer');
+            let html = '';
+
+            let db = JSON.parse(localStorage.getItem('erp_invoice_history')) || {};
+            if (db[id]) {
+                db[id].forEach(log => {
+                    html += `<div class="history-item"><div class="history-date">${log.time}</div><div class="history-desc">${log.desc}</div></div>`;
+                });
+            }
+
+            if (createdDate) {
+                html += `<div class="history-item"><div class="history-date">${createdDate}</div><div class="history-desc"><strong>✅ Invoice Created in System</strong></div></div>`;
+            }
+
+            container.innerHTML = html || '<p style="color:#64748b; font-size:12px;">No historical actions recorded yet.</p>';
+            document.getElementById('invoiceHistoryModal').style.display = 'flex';
+        }
+
+        // ============================================================
+        // PRINT ENGINE
+        // ============================================================
+        let currentPrintData = null;
+        let _pendingPrintWindow = null;
+
+        function openPrintModal(btn) {
+            logInvoiceAction(btn.getAttribute('data-inv-id'), "Printed Invoice");
+
+            let remarksText = btn.getAttribute('data-remarks') || '';
+            let descInput = document.querySelector('.desc-input');
+            let defaultDesc = descInput ? descInput.value : (remarksText || 'General Booking / Services Rendered');
+
+            let itemsData = [];
+            try {
+                let rawItems = btn.getAttribute('data-items');
+                if (rawItems && rawItems !== '[]' && rawItems.trim() !== '') {
+                    itemsData = JSON.parse(rawItems);
+                }
+            } catch(e) {
+                console.log("Error parsing items, falling back.", e);
+            }
+
+            if (!itemsData || itemsData.length === 0) {
+                itemsData = [{
+                    service_type: "الخدمات المهنية | Professional Services",
+                    description: defaultDesc,
+                    price: parseFloat(btn.getAttribute('data-total')).toFixed(window.CURRENCY_DECIMALS),
+                    total: parseFloat(btn.getAttribute('data-total')).toFixed(window.CURRENCY_DECIMALS)
+                }];
+            }
+
+            currentPrintData = {
+                id: btn.getAttribute('data-inv-id'),
+                name: btn.getAttribute('data-cust-name'),
+                total: parseFloat(btn.getAttribute('data-total')),
+                paid: parseFloat(btn.getAttribute('data-paid')),
+                balance: parseFloat(btn.getAttribute('data-balance')),
+                vatRate: parseFloat(btn.getAttribute('data-vat-rate')) || 0,
+                vatAmount: parseFloat(btn.getAttribute('data-vat')) || 0,
+                date: btn.getAttribute('data-date'),
+                remarks: remarksText,
+                items: itemsData
+            };
+
+            const settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+            if (settings.invoiceStyle) document.getElementById('printModalSelect').value = settings.invoiceStyle;
+
+            document.getElementById('printLayoutModal').style.display = 'flex';
+        }
+
+        document.getElementById('printNowBtn').addEventListener('click', function () {
+            const style = document.getElementById('printModalSelect').value;
+            const d = currentPrintData;
+
+            document.getElementById('printLayoutModal').style.display = 'none';
+            if (!d) return;
+
+            const settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+            settings.invoiceStyle = style;
+            localStorage.setItem('erp_print_settings', JSON.stringify(settings));
+
+            triggerPrint(d.id, d.name, d.total, d.paid, d.balance, d.date, style, d.remarks, d.items, d.vatRate, d.vatAmount);
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function triggerPrint(invId, customerName, total, paid, balance, date, overrideStyle, remarks, items, vatRate, vatAmount) {
+            const settings = JSON.parse(localStorage.getItem('erp_print_settings')) || {};
+            const style = overrideStyle || settings.invoiceStyle || 'style1';
+            const globalRemarks = (settings.globalRemarks && settings.globalRemarks !== 'undefined') ? settings.globalRemarks : 'Thank you for your business.';
+            const companyLogo = settings.companyLogo || settings['company Logo'] || '';
+            const companyName = "{{ current_company.company_name if current_company else 'Service Book ERP' }}";
+
+            const logoHtml = companyLogo ? `<img src="${companyLogo}" alt="Logo" style="max-height:64px; max-width:180px; object-fit:contain; display:block; margin-bottom:8px;" />` : '';
+
+            // Rich company header (name/address/phone/email) + footer notes from print settings.
+            const companyHeaderHtml = (settings.companyHeaderHtml && settings.companyHeaderHtml.trim()) ? settings.companyHeaderHtml : '';
+            const documentNotes = (settings.documentNotes && settings.documentNotes.trim()) ? settings.documentNotes : escapeHtml(globalRemarks);
+            // Use the rich header block when set; otherwise fall back to the plain company-name heading each style already used.
+            const coBlock = (fallbackHtml) => companyHeaderHtml ? `<div style="line-height:1.45;">${companyHeaderHtml}</div>` : fallbackHtml;
+
+            let html = '';
+
+            if (style === 'style1') {
+                let itemsHtml = '';
+                items.forEach(item => {
+                    let desc = item.description || item.passenger_details || item.details || remarks || 'General Booking / Services Rendered';
+                    let sType = item.service_type || 'الخدمات المهنية | Professional Services';
+                    itemsHtml += `
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; font-weight: bold; vertical-align: top; color: #000;">${escapeHtml(sType)}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; color: #000; vertical-align: top;">${escapeHtml(desc)}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; text-align: center; vertical-align: top; color: #000;">${parseFloat(item.price || item.total).toFixed(window.CURRENCY_DECIMALS)}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #ccc; text-align: right; font-weight: bold; vertical-align: top; color: #000;">${parseFloat(item.total).toFixed(window.CURRENCY_DECIMALS)}</td>
+                    </tr>`;
+                });
+
+                let subtotal = (total - vatAmount).toFixed(window.CURRENCY_DECIMALS);
+
+                html = `
+                <div style="max-width: 800px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, sans-serif; color: #000; background: white; padding: 30px; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 20px;">
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            ${logoHtml}
+                            ${coBlock(`<h1 style="margin: 0; color: #000; font-size: 26px; text-transform: uppercase;">${escapeHtml(companyName)}</h1>`)}
+                        </div>
+                        <div style="text-align: right;">
+                            <h2 style="margin: 0; font-size: 24px; color: #000; text-transform: uppercase;">فاتورة <br> <span style="font-size: 18px; color: #555;">INVOICE</span></h2>
+                            <p style="margin: 8px 0 0 0; font-size: 14px; font-weight:bold; color:#000;">${invId} <strong>: رقم الفاتورة | Invoice No</strong></p>
+                            <p style="margin: 4px 0 0 0; font-size: 14px; font-weight:bold; color:#000;">${date} <strong>: التاريخ | Date</strong></p>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px; border: 1px solid #000; padding: 15px; border-left: 4px solid #000; border-right: 4px solid #000;">
+                        <div style="text-align: left;">
+                            <p style="margin: 0 0 5px 0; font-size: 12px; color: #000; font-weight: bold; text-transform:uppercase;">فاتورة إلى | Bill To :</p>
+                            <h3 style="margin: 0; font-size: 18px; color: #000;">${escapeHtml(customerName)}</h3>
+                        </div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #000;">
+                        <thead>
+                            <tr style="background-color: #fff; color: #000; border-bottom: 2px solid #000;">
+                                <th style="padding: 12px; text-align: left; font-size: 13px; border-right: 1px solid #ccc; color: #000;">الخدمة / الصنف<br><span style="font-weight:normal; font-size:11px;">Service / Item</span></th>
+                                <th style="padding: 12px; text-align: left; font-size: 13px; border-right: 1px solid #ccc; color: #000;">الوصف / التفاصيل<br><span style="font-weight:normal; font-size:11px;">Description / Details</span></th>
+                                <th style="padding: 12px; text-align: center; font-size: 13px; border-right: 1px solid #ccc; color: #000;">سعر الوحدة<br><span style="font-weight:normal; font-size:11px;"> Price (${CURRENCY_SYMBOL})</span></th>
+                                <th style="padding: 12px; text-align: right; font-size: 13px; color: #000;">المبلغ الإجمالي<br><span style="font-weight:normal; font-size:11px;">Total Amount (${CURRENCY_SYMBOL})</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="width: 48%; padding-right: 20px;">
+                            <p style="margin: 0 0 5px 0; font-size: 12px; color: #000; font-weight: bold; text-transform:uppercase;">ملاحظات الدفع | Payment Remarks :</p>
+                            <div style="font-size: 13px; color: #000; line-height: 1.5; border: 1px solid #000; padding: 12px; min-height: 60px;">
+                                ${escapeHtml(remarks) || 'None'}
+                            </div>
+                        </div>
+                        <div style="width: 45%;">
+                            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ccc; text-align:left; color:#000;">المجموع الفرعي <br><span style="font-weight:normal; font-size:11px; color:#000;">Subtotal (${CURRENCY_SYMBOL})</span></td>
+                                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ccc; font-size: 14px; color:#000;">${subtotal}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ccc; text-align:left; color:#000;">ضريبة القيمة المضافة <br><span style="font-weight:normal; font-size:11px; color:#000;">VAT Tax (${vatRate}%)</span></td>
+                                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ccc; font-size: 14px; color:#000;">${vatAmount.toFixed(window.CURRENCY_DECIMALS)}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ccc; text-align:left; color:#000;">الدفعة المقدمة <br><span style="font-weight:normal; font-size:11px; color:#000;">Advance Paid (${CURRENCY_SYMBOL})</span></td>
+                                    <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ccc; font-size: 14px; color:#000;">- ${paid.toFixed(window.CURRENCY_DECIMALS)}</td>
+                                </tr>
+                                <tr style="background: #fff; color: #000; border-top: 2px solid #000; -webkit-print-color-adjust: exact;">
+                                    <td style="padding: 15px 10px; font-weight: bold; font-size: 16px; text-align:left; color:#000;">المجموع النهائي <br><span style="font-weight:normal; font-size:12px; color:#000;">Grand Total (${CURRENCY_SYMBOL})</span></td>
+                                    <td style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 18px; color:#000;">${total.toFixed(window.CURRENCY_DECIMALS)}</td>
+                                </tr>
+                                <tr style="background: #f1f5f9; color: #000; border-top: 2px solid #000; -webkit-print-color-adjust: exact;">
+                                    <td style="padding: 15px 10px; font-weight: bold; font-size: 16px; text-align:left; color:#000;">الرصيد المستحق <br><span style="font-weight:normal; font-size:12px; color:#000;">Balance Due (${CURRENCY_SYMBOL})</span></td>
+                                    <td style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 18px; color:#000;">${balance.toFixed(window.CURRENCY_DECIMALS)}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div style="margin-top: 50px; border-top: 2px solid #000; padding-top: 20px; font-size: 12px; color: #000; text-align: center; font-weight:bold;">
+                        ${documentNotes}
+                    </div>
+                </div>`;
+
+            } else if (style === 'style2') {
+                html = `<div style="max-width: 800px; margin: 0 auto; font-family: 'Times New Roman', Times, serif; color: #000;">
+                    <div style="text-align: center; border: 2px solid #000; padding: 10px; margin-bottom: 20px;">
+                        ${logoHtml ? `<div style="text-align:center;">${logoHtml}</div>` : ''}
+                        ${coBlock(`<h1 style="margin: 0; font-size: 28px; text-transform: uppercase;">${escapeHtml(companyName)}</h1>`)}
+                        <h3 style="margin: 5px 0 0 0;">OFFICIAL INVOICE</h3>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <div style="border: 1px solid #000; padding: 10px; width: 45%;"><strong>Customer Name:</strong><br><span style="font-size: 18px;">${escapeHtml(customerName)}</span></div>
+                        <div style="border: 1px solid #000; padding: 10px; width: 45%;"><strong>Invoice No:</strong> INV-${invId}<br><strong>Date:</strong> ${date}</div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                        <thead><tr><th style="border: 1px solid #000; padding: 10px; text-align: left;">Particulars</th><th style="border: 1px solid #000; padding: 10px; text-align: right;">Gross Amount</th></tr></thead>
+                        <tbody><tr><td style="border: 1px solid #000; padding: 15px; height: 150px; vertical-align: top;">Booking / Services Rendered<br><br><span style="color:#555; font-size:12px;">${escapeHtml(remarks)}</span></td><td style="border: 1px solid #000; padding: 15px; text-align: right; vertical-align: top;">${total.toFixed(window.CURRENCY_DECIMALS)}</td></tr></tbody>
+                    </table>
+                    <table style="width: 40%; float: right; border-collapse: collapse;">
+                        <tr><td style="border: 1px solid #000; padding: 8px;"><strong>Total:</strong></td><td style="border: 1px solid #000; padding: 8px; text-align: right;">${total.toFixed(window.CURRENCY_DECIMALS)}</td></tr>
+                        <tr><td style="border: 1px solid #000; padding: 8px;"><strong>Paid:</strong></td><td style="border: 1px solid #000; padding: 8px; text-align: right;">${paid.toFixed(window.CURRENCY_DECIMALS)}</td></tr>
+                        <tr><td style="border: 2px solid #000; padding: 8px;"><strong>BALANCE:</strong></td><td style="border: 2px solid #000; padding: 8px; text-align: right;"><strong>${balance.toFixed(window.CURRENCY_DECIMALS)}</strong></td></tr>
+                    </table><div style="clear:both;"></div>
+                    <div style="margin-top: 40px; font-size: 12px; font-weight: bold;">Authorized Signatory: _________________________</div>
+                    <div style="margin-top: 20px; border-top: 1px solid #000; padding-top: 10px; font-size: 11px; text-align: center;">${documentNotes}</div>
+                </div>`;
+
+            } else {
+                html = `<div style="max-width: 800px; margin: 0 auto; font-family: Helvetica, Arial, sans-serif; color: #444;">
+                    <div style="margin-bottom: 30px;">${logoHtml}${coBlock(`<h1 style="color: #111; font-size: 24px; font-weight: 300; letter-spacing: 2px;">${escapeHtml(companyName)}</h1>`)}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 50px;">
+                        <div><p style="margin: 0; color: #888; font-size: 12px; text-transform: uppercase;">Invoice To</p><p style="margin: 5px 0 0 0; font-size: 20px; color: #111;">${escapeHtml(customerName)}</p></div>
+                        <div style="text-align: right;"><p style="margin: 0; color: #888; font-size: 12px; text-transform: uppercase;">Invoice Details</p><p style="margin: 5px 0 0 0; color: #111;">INV-${invId}<br>${date}</p></div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                        <thead><tr><th style="border-bottom: 1px solid #ddd; padding: 10px 0; text-align: left; font-weight: normal; color: #888;">Description</th><th style="border-bottom: 1px solid #ddd; padding: 10px 0; text-align: right; font-weight: normal; color: #888;">Total</th></tr></thead>
+                        <tbody><tr><td style="border-bottom: 1px solid #eee; padding: 20px 0; color: #111;">Provided Services<br><span style="color:#777; font-size:12px;">${escapeHtml(remarks)}</span></td><td style="border-bottom: 1px solid #eee; padding: 20px 0; text-align: right; color: #111;">${total.toFixed(window.CURRENCY_DECIMALS)}</td></tr></tbody>
+                    </table>
+                    <div style="text-align: right; font-size: 14px;">
+                        <p style="margin: 5px 0;">Total: &nbsp;&nbsp;&nbsp; ${total.toFixed(window.CURRENCY_DECIMALS)}</p>
+                        <p style="margin: 5px 0;">Paid: &nbsp;&nbsp;&nbsp; ${paid.toFixed(window.CURRENCY_DECIMALS)}</p>
+                        <p style="margin: 15px 0 0 0; font-size: 22px; color: #111;">Amount Due: &nbsp;&nbsp; <strong>${balance.toFixed(window.CURRENCY_DECIMALS)}</strong></p>
+                    </div>
+                    <div style="margin-top: 80px; font-size: 11px; color: #aaa;">${documentNotes}</div>
+                </div>`;
+            }
+
+            const pw = _pendingPrintWindow;
+            _pendingPrintWindow = null;
+            if (!pw || pw.closed) {
+    document.getElementById('printLayer').innerHTML = html;
+    const originalTitle = document.title;
+    document.title = `INV-${invId} - ${customerName} - ${date}`;
+    window.print();
+    document.title = originalTitle;
+    return;
+            }
+            const fullHtml = `<!DOCTYPE html><html><head><title>INV-${invId} - ${customerName} - ${date}</title>
+                <style>
+                    body { margin: 0; padding: 30px; background: #f3f4f6; font-family: Arial, sans-serif; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    .print-btn { position: fixed; top: 10px; right: 10px; padding: 10px 18px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+                    @media print { .print-btn { display: none; } body { padding: 0; background: white; } }
+                </style>
+            </head><body>
+                <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+                ${html}
+            </body></html>`;
+            pw.document.write(fullHtml);
+            pw.document.close();
+        }
+
+        // ============================================================
+        // ON LOAD
+        // ============================================================
+        window.onload = () => {
+            if (document.getElementById('customer_id').value) onCustomerChange();
+            calcTotal();
+        };
+    </script>
+    <script src="/static/loading.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+    // Make the Master Account customer dropdown searchable by name / phone / ID
+    // number / contact person (same concept as the booking page + Add Customer box).
+    (function(){
+        function initCustomerSelect2(){
+            if(!window.jQuery || !jQuery.fn || !jQuery.fn.select2) return;   // CDN blocked -> native select still works
+            function _custResultRow(c){
+                if(c.loading) return c.text;
+                var $r = jQuery('<div></div>');
+                $r.append(jQuery('<div style="font-weight:600;"></div>').text(c.text || c.name || ''));
+                var extra = [];
+                if(c.phone) extra.push(c.phone);
+                if(c.id_number) extra.push('ID: ' + c.id_number);
+                if(c.advance_amount && c.advance_amount > 0) extra.push('Advance: ' + Number(c.advance_amount).toFixed(2));
+                if(extra.length) $r.append(jQuery('<div style="font-size:11px; color:#64748b;"></div>').text(extra.join('   \u2022   ')));
+                return $r;
+            }
+            try {
+                jQuery('#customer_id').select2({
+                    placeholder: "-- Choose Customer --",
+                    width: '100%',
+                    minimumInputLength: 0,
+                    ajax: {
+                        url: '/api/search_customer',
+                        dataType: 'json',
+                        delay: 200,
+                        data: function(params){ return { q: params.term || '' }; },
+                        processResults: function(data){
+                            return { results: (data||[]).map(function(c){
+                                return { id: c.id, text: c.name, name: c.name, phone: c.phone, id_number: c.id_number, advance_amount: c.advance_amount };
+                            }) };
+                        },
+                        cache: true
+                    },
+                    templateResult: _custResultRow,
+                    templateSelection: function(c){ return c.text || c.name || ''; }
+                });
+            } catch(e){}
+        }
+        if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initCustomerSelect2);
+        else initCustomerSelect2();
+        // expose so the quick-add flow can refresh select2 after adding/selecting a customer
+        window._refreshCustomerSelect2 = function(){
+            if(window.jQuery && jQuery.fn && jQuery.fn.select2){ try{ jQuery('#customer_id').trigger('change.select2'); }catch(e){} }
+        };
+    })();
+    </script>
+    <!-- READ-ONLY RECORD VIEW MODAL (shared) -->
+    <div id="recordViewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5000; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="background:#fff; border-radius:12px; width:100%; max-width:640px; max-height:88vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:2px solid #1e3a8a;">
+                <h3 id="recordViewTitle" style="margin:0; color:#1e3a8a; font-size:18px;">View</h3>
+                <button type="button" onclick="document.getElementById('recordViewModal').style.display='none'" style="background:#e2e8f0; border:none; width:30px; height:30px; border-radius:6px; cursor:pointer; font-weight:bold;">✕</button>
+            </div>
+            <div style="padding:8px 20px 4px; font-size:12px; color:#64748b;">🔒 View only — a read-only snapshot of what was entered. Use the ✏️ Edit action to make changes.</div>
+            <div id="recordViewBody" style="padding:8px 20px 18px;"></div>
+            <div style="display:flex; justify-content:flex-end; padding:0 20px 20px;">
+                <button type="button" onclick="document.getElementById('recordViewModal').style.display='none'" style="background:#1e3a8a; color:#fff; border:none; padding:9px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+    <script>
+function _rvEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]; }); }
+
+// Opens a read-only popup showing a saved record exactly as it was entered.
+// Fetches JSON from the given view endpoint; nothing here can edit the record.
+async function openRecordView(url) {
+    var modal = document.getElementById('recordViewModal');
+    var body = document.getElementById('recordViewBody');
+    var titleEl = document.getElementById('recordViewTitle');
+    titleEl.textContent = 'Loading…';
+    body.innerHTML = '<p style="color:#64748b; padding:20px 0;">Loading…</p>';
+    modal.style.display = 'flex';
+    try {
+        var res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        var data = await res.json();
+        if (!data || !data.success) {
+            titleEl.textContent = 'Not Found';
+            body.innerHTML = '<p style="color:#ef4444; padding:16px 0;">' + _rvEsc((data && data.message) || 'Record not found.') + '</p>';
+            return;
+        }
+        titleEl.textContent = data.title || 'View';
+        var html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        (data.rows || []).forEach(function(pair){
+            html += '<tr>'
+                + '<td style="padding:8px 10px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:600; vertical-align:top; width:40%;">' + _rvEsc(pair[0]) + '</td>'
+                + '<td style="padding:8px 10px; border-bottom:1px solid #eef2f7; color:#0f172a; font-weight:600; word-break:break-word;">' + _rvEsc(pair[1]) + '</td>'
+                + '</tr>';
+        });
+        html += '</table>';
+        if (data.items && data.items.data && data.items.data.length) {
+            var cols = data.items.columns || [];
+            var rightCol = cols.map(function(c){ return /\(|amount|cost|selling|price|total|balance/i.test(c); });
+            html += '<div style="margin-top:16px; font-weight:700; color:#1e3a8a; font-size:13px;">Details</div>';
+            html += '<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;"><thead><tr>';
+            cols.forEach(function(c, i){ html += '<th style="background:#1e3a8a; color:#fff; padding:6px 8px; text-align:' + (rightCol[i]?'right':'left') + ';">' + _rvEsc(c) + '</th>'; });
+            html += '</tr></thead><tbody>';
+            data.items.data.forEach(function(row){
+                html += '<tr>';
+                row.forEach(function(cell, i){ html += '<td style="padding:6px 8px; border-bottom:1px solid #eef2f7; text-align:' + (rightCol[i]?'right':'left') + ';">' + _rvEsc(cell) + '</td>'; });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+        body.innerHTML = html;
+    } catch (e) {
+        titleEl.textContent = 'Error';
+        body.innerHTML = '<p style="color:#ef4444; padding:16px 0;">Could not load this record. Please try again.</p>';
+    }
+}
+    </script>
+
+    <!-- Quick Add Customer (inline — mirrors the Master Account customer form) -->
+    <div id="quickAddCustomerModal" class="modal">
+        <div class="modal-content" style="width:420px; max-width:95vw;">
+            <h3 style="margin-top:0; color:#0f172a;">Add Customer</h3>
+            <div id="qacError" style="display:none; color:#dc2626; background:#fef2f2; padding:8px 12px; border-radius:6px; font-size:13px; margin-bottom:10px;"></div>
+            <label style="display:block; font-weight:bold; font-size:13px; margin:6px 0 4px;">Company / Full Name *</label>
+            <input type="text" id="qacName" style="width:100%;">
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">Contact Person</label>
+            <input type="text" id="qacContact" style="width:100%;">
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">Phone Number</label>
+            <input type="text" id="qacPhone" style="width:100%;">
+            <label style="display:block; font-weight:bold; font-size:12px; color:#2563eb; margin:10px 0 4px;">🔍 Search existing (name / phone / ID)</label>
+            <input type="text" id="qacSearch" autocomplete="off" placeholder="Check if this customer already exists..." style="width:100%;" oninput="qacSearchExisting(this.value)">
+            <div id="qacSearchResults" style="display:none; border:1px solid #cbd5e1; border-radius:6px; margin:4px 0 8px; max-height:130px; overflow-y:auto; font-size:12px;"></div>
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">Type of ID</label>
+            <select id="qacIdType" style="width:100%;"><option value="">-- Select ID Type --</option><option value="Passport">Passport</option><option value="National ID">National ID</option><option value="Driving License">Driving License</option></select>
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">ID Number</label>
+            <input type="text" id="qacIdNumber" style="width:100%;">
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">ID Card / Document (optional)</label>
+            <input type="file" id="qacIdDoc" accept="image/*,application/pdf" style="width:100%;">
+            <label style="display:block; font-weight:bold; font-size:13px; margin:10px 0 4px;">Credit Limit (Allowed Debt)</label>
+            <input type="number" id="qacCredit" step="0.01" placeholder="0.00" style="width:100%;">
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                <button type="button" onclick="document.getElementById('quickAddCustomerModal').style.display='none'" style="background:white; border:1px solid #cbd5e1; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancel</button>
+                <button type="button" id="qacSaveBtn" onclick="saveQuickCustomer()" style="background:#10b981; color:#fff; border:none; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">Save Customer</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Inline "quick add customer" for the invoice form — creates a master-account
+    // customer via the same API the Accounts page uses, then selects it here.
+    function openQuickAddCustomer(){
+        document.getElementById('qacError').style.display='none';
+        ['qacName','qacContact','qacPhone','qacCredit','qacIdNumber','qacSearch'].forEach(function(i){ var e=document.getElementById(i); if(e) e.value=''; });
+        var _qt=document.getElementById('qacIdType'); if(_qt) _qt.value='';
+        var _qd=document.getElementById('qacIdDoc'); if(_qd) _qd.value='';
+        var _qr=document.getElementById('qacSearchResults'); if(_qr){ _qr.style.display='none'; _qr.innerHTML=''; }
+        document.getElementById('quickAddCustomerModal').style.display='flex';
+        setTimeout(function(){ document.getElementById('qacName').focus(); }, 50);
+    }
+    function _qacReadDoc(){
+        return new Promise(function(res){
+            var el = document.getElementById('qacIdDoc');
+            if(!el || !el.files || !el.files[0]) return res(null);
+            var rd = new FileReader(); rd.onload=function(){res(rd.result);}; rd.onerror=function(){res(null);}; rd.readAsDataURL(el.files[0]);
+        });
+    }
+    let _qacSearchTimer = null;
+    function qacSearchExisting(q){
+        var box = document.getElementById('qacSearchResults');
+        clearTimeout(_qacSearchTimer);
+        q = (q||'').trim();
+        if(q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+        _qacSearchTimer = setTimeout(async function(){
+            try{
+                var res = await fetch('/api/search_customer?q='+encodeURIComponent(q));
+                var items = await res.json();
+                box.style.display='block';
+                if(!items.length){ box.innerHTML='<div style="padding:8px; color:#059669;">No existing match \u2014 safe to add.</div>'; return; }
+                box.innerHTML = items.map(function(c){
+                    return '<div style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;" onclick="qacUseExisting('+c.id+',\''+(c.name||'').replace(/\'/g,"")+'\')">\u26a0\ufe0f <b>'+c.name+'</b> (#'+c.id+') \u2014 '+(c.phone||'no phone')+(c.id_number?(' \u2014 ID: '+c.id_number):'')+'</div>';
+                }).join('');
+            }catch(e){ box.style.display='none'; }
+        }, 250);
+    }
+    function qacUseExisting(id, name){
+        // Pick the existing customer straight into the invoice instead of duplicating.
+        var sel = document.getElementById('customer_id');
+        if(sel){
+            var opt = sel.querySelector('option[value="'+id+'"]');
+            if(!opt){ opt = new Option(name, id, true, true); sel.add(opt); }
+            sel.value = String(id);
+        }
+        document.getElementById('quickAddCustomerModal').style.display='none';
+        if(window._refreshCustomerSelect2) window._refreshCustomerSelect2();
+        if(typeof onCustomerChange === 'function') onCustomerChange();
+    }
+    async function saveQuickCustomer(){
+        var err = document.getElementById('qacError');
+        var btn = document.getElementById('qacSaveBtn');
+        var name = document.getElementById('qacName').value.trim();
+        if(!name){ err.textContent='Customer name is required'; err.style.display='block'; return; }
+        btn.disabled = true;
+        try {
+            var docData = await _qacReadDoc();
+            var r = await fetch('/api/add_customer', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    name: name,
+                    contact_person: document.getElementById('qacContact').value.trim(),
+                    phone: document.getElementById('qacPhone').value.trim(),
+                    credit_limit: document.getElementById('qacCredit').value || 0,
+                    id_type: document.getElementById('qacIdType').value,
+                    id_number: document.getElementById('qacIdNumber').value.trim(),
+                    id_document_data: docData
+                })
+            });
+            var d = await r.json();
+            if(d.success){
+                var sel = document.getElementById('customer_id');
+                sel.add(new Option(d.name, d.id, true, true));
+                document.getElementById('quickAddCustomerModal').style.display='none';
+                if(window._refreshCustomerSelect2) window._refreshCustomerSelect2();
+                if(typeof onCustomerChange === 'function') onCustomerChange();
+            } else {
+                err.textContent = d.message || 'Failed to add customer'; err.style.display='block';
+            }
+        } catch(e){ err.textContent='Network error. Please try again.'; err.style.display='block'; }
+        btn.disabled = false;
+    }
+    </script>
+
+<!-- Req #2: unified date/time picker (flatpickr) with a Today/Now button -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script>
+(function(){
+  // Set a date field's value AND keep flatpickr in sync (use this instead of el.value=... for date fields).
+  window.setDateVal = function(el, v){
+    if(!el) return;
+    el.value = v || '';
+    if(el._flatpickr){ if(v){ el._flatpickr.setDate(v, false); } else { el._flatpickr.clear(); } }
+  };
+  function cfg(isDT){
+    return {
+      allowInput: true,
+      time_24hr: true,
+      enableTime: isDT,
+      dateFormat: isDT ? 'Y-m-d\\TH:i' : 'Y-m-d',
+      onChange: function(sel, str, inst){
+        try{ inst.input.dispatchEvent(new Event('change', {bubbles:true})); inst.input.dispatchEvent(new Event('input', {bubbles:true})); }catch(e){}
+      },
+      onReady: function(sel, str, inst){
+        if(inst.calendarContainer.querySelector('.fp-today-btn')) return;
+        var b=document.createElement('div');
+        b.className='fp-today-btn';
+        b.textContent = isDT ? 'Now' : 'Today';
+        b.style.cssText='text-align:center;padding:8px;cursor:pointer;background:#2563eb;color:#fff;font-size:13px;font-weight:bold;';
+        b.addEventListener('click', function(){ inst.setDate(new Date(), true); if(!isDT) inst.close(); });
+        inst.calendarContainer.appendChild(b);
+      }
+    };
+  }
+  function initOn(el){
+    if(!el || el._flatpickr) return;
+    if(el.getAttribute('data-no-fp')!==null) return;   // opt-out hook
+    var isDT = (el.type==='datetime-local') || (el.getAttribute('data-fp')==='datetime');
+    var val = el.value;
+    el.setAttribute('data-fp', isDT ? 'datetime' : 'date');
+    try{ el.type='text'; }catch(e){}
+    if(val) el.value = val;
+    try{ flatpickr(el, cfg(isDT)); }catch(e){}
+  }
+  function initAll(root){
+    (root||document).querySelectorAll('input[type="date"],input[type="datetime-local"],input[data-fp]').forEach(initOn);
+  }
+  function boot(){
+    if(typeof flatpickr==='undefined') return;   // CDN blocked -> native inputs still work
+    initAll(document);
+    try{
+      var mo=new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          (m.addedNodes||[]).forEach(function(n){
+            if(n.nodeType!==1) return;
+            if(n.matches && (n.matches('input[type="date"]')||n.matches('input[type="datetime-local"]'))) initOn(n);
+            if(n.querySelectorAll) initAll(n);
+          });
+        });
+      });
+      mo.observe(document.body,{childList:true,subtree:true});
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+
+</html>

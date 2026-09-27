@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Permissions - Service Book</title>
+    <style>
+        :root { --primary: #1E3A8A; --secondary: #6366F1; --accent: #EAB308; --gradient: linear-gradient(135deg, #1E3A8A, #6366F1); --bg-color: #F3F4F6; --card-bg: #ffffff; --text-main: #111827; --text-muted: #6B7280; --border: #E5E7EB; --danger: #ef4444; --success: #10b981; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-color); color: var(--text-main); font-size: 12px; padding: 20px; margin: 0; }
+        .system-top-bar { background: var(--gradient); color: white; padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin: auto; max-width: 1200px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.3); font-size: 14px; font-weight: 700; letter-spacing: 0.5px; border-bottom: 3px solid var(--accent); }
+        .container { background-color: var(--card-bg); padding: 25px; border-radius: 16px; max-width: 1200px; margin: auto; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); min-height: 600px; border: 1px solid var(--border); }
+        .btn-home { background: rgba(255,255,255,0.15); color: white; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px;} .btn-home:hover { background: white; color: var(--primary); }
+        .action-toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; background-color: #F9FAFB; padding: 15px 20px; border-radius: 12px; align-items: center; border: 1px solid var(--border); }
+        .action-btns button, .btn-action { cursor: pointer; font-weight: 600; border-radius: 6px; font-size: 12px; border: none; color: white; padding: 10px 18px; margin-right: 8px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); } .action-btns button:hover, .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .btn-action { background: var(--gradient); } .btn-export { background-color: var(--text-main); } .btn-edit { background-color: var(--accent); padding: 6px 12px; font-size: 10px; border-radius: 4px; border:none; color:#111827; cursor:pointer; font-weight:bold;} .btn-del-sm { background-color: var(--danger); padding: 6px 12px; font-size: 10px; border-radius: 4px; border:none; color:white; cursor:pointer; font-weight:bold;} 
+        .smart-search-box { padding: 10px 15px; width: 300px; border: 1px solid var(--border); border-radius: 30px; font-size: 11px; background-color: white; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); outline: none; transition: 0.3s;} .smart-search-box:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 5px; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); } th, td { padding: 15px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border); } th { background-color: #F9FAFB; color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); } tr:last-child td { border-bottom: none; } tbody tr:hover { background-color: #F9FAFB; } .text-center { text-align: center; }
+        .badge-status { padding: 5px 12px; border-radius: 20px; font-weight: 700; color: white; text-align: center; display: inline-block; font-size: 10px;} .badge-active { background-color: var(--success); } .badge-inactive { background-color: var(--danger); } 
+        .perm-badge { background-color: var(--primary); color: white; padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; margin-right: 4px; display: inline-block; text-transform: uppercase;}
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); overflow-y: auto; padding: 40px 0;} .modal-content { background-color: var(--card-bg); margin: 0 auto; padding: 30px; border: 1px solid var(--border); width: 750px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; animation: modalFadeIn 0.3s ease-out; border-top: 4px solid var(--primary);} @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } } .close-btn { position: absolute; right: 25px; top: 20px; color: var(--text-muted); font-size: 24px; font-weight: bold; cursor: pointer; transition: 0.2s;} .close-btn:hover { color: var(--danger); } .modal h3 { margin-top: 0; font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; color: var(--primary); font-weight: 800;}
+        .form-row { display: flex; gap: 20px; margin-bottom: 15px; } .form-group { flex: 1; display: flex; flex-direction: column; } .form-group label { font-weight: 600; margin-bottom: 6px; font-size: 11px; color: var(--text-muted); } .form-group input[type="text"], .form-group input[type="password"], .form-group select { padding: 10px 12px; border: 1px solid var(--border); background-color: white; color: var(--text-main); font-size: 12px; border-radius: 8px; outline: none; transition: 0.2s; } .form-group input:focus, .form-group select:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .perm-matrix { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; } .perm-matrix th { background-color: #F9FAFB; padding: 10px; font-size: 11px; text-align: center; border-bottom: 2px solid var(--border); } .perm-matrix td { padding: 10px; text-align: center; border-bottom: 1px solid var(--border); background: white; } .perm-matrix tr:last-child td { border-bottom: none; } .perm-matrix input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+        .modal-save-btn { background: var(--gradient); color: white; padding: 14px 20px; border: none; cursor: pointer; font-weight: 700; width: 100%; border-radius: 8px; margin-top: 10px; font-size: 14px; transition: 0.3s; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); } .modal-save-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(30, 58, 138, 0.3); }
+    </style>
+</head>
+<body onload="initUsers()">
+
+    <div class="system-top-bar">
+        <div style="display: flex; align-items: center; gap: 15px;"><a href="/" class="btn-home">🏠 Dashboard</a><div>🛡️ Staff & Granular User Permissions</div></div>
+        <div id="top_user_name">👤 Logged in as: Admin</div>
+    </div>
+
+    <div class="container">
+        {% if has_permission('Admin') %}
+        <div class="action-toolbar">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="btn-action" onclick="openModal('userModal', true)">[+] Create New User / Staff</button>
+                {% if is_super %}<button class="btn-action" style="background:#8b5cf6;" onclick="openModal('companyModal')">🏢 Create New Company</button>{% endif %}
+                {% if not is_super and user_limit > 0 %}
+                    {% set is_full = user_count >= user_limit %}
+                    <span style="font-size:13px; padding:6px 12px; border-radius:16px; font-weight:600;
+                                {% if is_full %}background:#fee2e2; color:#991b1b;
+                                {% elif user_count >= user_limit - 1 %}background:#fef3c7; color:#78350f;
+                                {% else %}background:#d1fae5; color:#065f46;{% endif %}">
+                        👥 {{ user_count }} / {{ user_limit }} users ({{ plan_label }})
+                        {% if is_full %} — limit reached, upgrade to add more{% endif %}
+                    </span>
+                {% endif %}
+            </div>
+            <div class="action-btns">
+                <input type="text" id="userSearch" class="smart-search-box" placeholder="🔍 Search Users or Roles..." onkeyup="searchUserTable()">
+                <button class="btn-export" onclick="exportUsers()">📊 Export List</button>
+            </div>
+        </div>
+        {% endif %}
+        <table id="table_users">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">ID</th>
+                    {% if is_super %}<th>Company</th>{% endif %}
+                    <th>Staff Name</th>
+                    <th>Login Username</th>
+                    <th>Designation / Role</th>
+                    <th style="width: 25%;">Granted Access Matrix</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody id="body_users">
+                {% for u in users %}
+                <tr>
+                    <td style="font-weight:bold; color:var(--text-muted);">{{ u.id }}</td>
+                    {% if is_super %}<td style="font-weight:bold; color:var(--primary); font-size:11px;">{{ u.company_name }}</td>{% endif %}
+                    <td style="font-weight:800; font-size:13px;">{{ u.full_name or u.username }}</td>
+                    <td style="color:var(--secondary); font-weight:bold;">{{ u.username }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>
+                        {% if u.permissions and 'Admin' in u.permissions %}
+                        <div style="background:var(--danger); color:white; padding: 4px 8px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block;">SUPER ADMIN (ALL ACCESS)</div>
+                        {% elif u.permissions %}
+                        {# This is a bit complex to parse in Jinja, but we can show the raw for now or a placeholder #}
+                        <div style="font-size:10px; color:var(--text-muted); font-weight:bold;">Custom Permissions Set</div>
+                        {% else %}
+                        <span style="color:var(--danger); font-size:10px; font-weight:bold;">No Access Granted</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if u.status == 'Active' %}
+                        <span class="badge-status badge-active">Active</span>
+                        {% else %}
+                        <span class="badge-status badge-inactive">{{ u.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-edit" style="padding: 5px;" onclick='editUser({{ u.id | tojson }}, {{ (u.full_name or "") | tojson }}, {{ u.username | tojson }}, {{ (u.role or "") | tojson }}, {{ u.status | tojson }}, {{ (u.permissions or "[]") | tojson }}, {{ (u.email or "") | tojson }})'>Edit Matrix</button>
+                        <button class="btn-del-sm" onclick='deleteUser({{ u.id | tojson }}, {{ u.username | tojson }})'>Del</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('userModal')">&times;</span>
+            <h3>🛡️ Configure Staff Permissions & Profile</h3>
+            {% if is_super %}
+            <div id="companySelectWrapper">
+                <label>Assign to Company *</label>
+                <select id="mdl_target_company">
+                    <option value="">— Select a company —</option>
+                    {% for c in all_companies %}
+                    <option value="{{ c.id }}">{{ c.company_name }}</option>
+                    {% endfor %}
+                </select>
+                <small style="color:#94a3b8;font-size:11px;">Only shown for new users. Editing keeps the user in their existing company.</small>
+            </div>
+            {% endif %}
+            <div class="form-row"><div class="form-group"><label>Full Staff Name *</label><input type="text" id="mdl_user_name" placeholder="e.g. John Doe"></div><div class="form-group"><label>Designation / Job Title *</label><input type="text" id="mdl_user_role" placeholder="e.g. Sales Agent"></div></div>
+            <div class="form-row"><div class="form-group"><label>Login Username *</label><input type="text" id="mdl_user_id" placeholder="e.g. john.sales"></div><div class="form-group"><label>Email (for password reset)</label><input type="email" id="mdl_user_email" placeholder="e.g. john@company.com"></div></div>
+            <div class="form-row"><div class="form-group"><label>Login Password</label><input type="password" id="mdl_user_pwd" placeholder="New user: set a password • Editing: leave blank to keep, or type to reset"></div></div>
+            <div class="form-row"><div class="form-group" style="flex:0.5;"><label>Account Status</label><select id="mdl_user_status"><option value="Active">Active (Can Login)</option><option value="Inactive">Inactive (Locked Out)</option></select></div></div>
+
+            <h4 style="margin: 15px 0 10px 0; color: var(--primary);">✅ Granular Module Permissions</h4>
+            <table class="perm-matrix">
+                <thead><tr><th style="text-align: left;">System Module</th><th>👁️ View</th><th>➕ Add / Create</th><th>✏️ Modify / Edit</th><th>❌ Delete</th></tr></thead>
+                <tbody>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">CRM & Leads</td><td><input type="checkbox" class="perm-cb" value="CRM_View"></td><td><input type="checkbox" class="perm-cb" value="CRM_Add"></td><td><input type="checkbox" class="perm-cb" value="CRM_Edit"></td><td><input type="checkbox" class="perm-cb" value="CRM_Delete"></td></tr>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">Master Booking</td><td><input type="checkbox" class="perm-cb" value="Booking_View"></td><td><input type="checkbox" class="perm-cb" value="Booking_Add"></td><td><input type="checkbox" class="perm-cb" value="Booking_Edit"></td><td><input type="checkbox" class="perm-cb" value="Booking_Delete"></td></tr>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">Finance & Invoicing</td><td><input type="checkbox" class="perm-cb" value="Invoice_View"></td><td><input type="checkbox" class="perm-cb" value="Invoice_Add"></td><td><input type="checkbox" class="perm-cb" value="Invoice_Edit"></td><td><input type="checkbox" class="perm-cb" value="Invoice_Delete"></td></tr>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">Receipts & Payments</td><td><input type="checkbox" class="perm-cb" value="Ledger_View"></td><td><input type="checkbox" class="perm-cb" value="Ledger_Add"></td><td><input type="checkbox" class="perm-cb" value="Ledger_Edit"></td><td><input type="checkbox" class="perm-cb" value="Ledger_Delete"></td></tr>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">Master Accounts</td><td><input type="checkbox" class="perm-cb" value="Accounts_View"></td><td><input type="checkbox" class="perm-cb" value="Accounts_Add"></td><td><input type="checkbox" class="perm-cb" value="Accounts_Edit"></td><td><input type="checkbox" class="perm-cb" value="Accounts_Delete"></td></tr>
+                    <tr><td style="text-align: left; font-weight: bold; color: var(--text-main);">Visa Plus Module</td><td><input type="checkbox" class="perm-cb" value="Visa_View"></td><td><input type="checkbox" class="perm-cb" value="Visa_Add"></td><td><input type="checkbox" class="perm-cb" value="Visa_Edit"></td><td><input type="checkbox" class="perm-cb" value="Visa_Delete"></td></tr>
+                    <tr style="background-color: #f8fafc;"><td style="text-align: left; font-weight: bold; color: var(--text-main);">Master Reports</td><td><input type="checkbox" class="perm-cb" value="Reports_View"></td><td colspan="2" style="color:var(--text-muted); font-size:10px;">(Read-Only Module)</td><td><input type="checkbox" class="perm-cb" value="Reports_Export" title="Allow Excel Export"> Export</td></tr>
+                </tbody>
+            </table>
+            <div style="padding: 15px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;"><label style="color: var(--danger); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px;"><input type="checkbox" class="perm-cb" value="Admin" id="cb_admin" onchange="toggleAdmin(this)" style="width: 20px; height: 20px;"> GRANT SUPER ADMIN (Bypass All Restrictions)</label></div>
+            <button type="button" class="modal-save-btn" onclick="saveUser()">Save User & Permissions</button>
+        </div>
+    </div>
+    {% if is_super %}
+    <div id="companyModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-btn" onclick="closeModal('companyModal')">&times;</span>
+            <h3>🏢 Create New Company</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Company Name *</label>
+                    <input type="text" id="newCompanyName" placeholder="e.g. Globe Travels LLC">
+                </div>
+                <div class="form-group">
+                    <label>Master Email</label>
+                    <input type="email" id="newCompanyEmail" placeholder="admin@company.com">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Subscription Plan</label>
+                    <select id="newCompanyPlan" onchange="togglePlanExpiry(this)">
+                        <option value="free" selected>Free (14-day trial)</option>
+                        <option value="gold">Gold (1 year, 3 users)</option>
+                        <option value="platinum">Platinum (1 year, unlimited users)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="trialDaysGroup">
+                    <label>Trial / Subscription Days</label>
+                    <input type="number" id="newCompanyTrialDays" value="14" min="1" max="365">
+                </div>
+            </div>
+            
+            <div style="padding: 15px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; margin-top: 10px;">
+                <p style="color: #1e40af; font-size: 12px; line-height: 1.5; margin: 0;">
+                    ℹ️ A default branch named <b>"Main Branch"</b> will be auto-created. You can assign staff to this company immediately after creation.
+                </p>
+            </div>
+            
+            <button type="button" class="modal-save-btn" onclick="saveCompany(this)">Create Company</button>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not is_super %}
+    <!-- KPI SECTION -->
+    <div class="container" id="kpiSection" style="margin-top:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h2 style="margin:0; color:var(--primary); font-size:16px;">📊 Staff Performance KPI</h2>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="kpiPeriod" onchange="loadKPI()" style="padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:12px;">
+                    <option value="all">All Time</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="this_year">This Year</option>
+                </select>
+                <button onclick="loadKPI()" style="padding:8px 14px; background:var(--gradient); color:white; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;">🔄 Refresh</button>
+            </div>
+        </div>
+        <div id="kpiCards" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); gap:16px;">
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">Loading KPI data...</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        let currentEditRow = null;
+        let currentDbId = null;
+
+        {% if not is_super %}
+        async function loadKPI() {
+            const cards = document.getElementById('kpiCards');
+            cards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</div>';
+
+            try {
+                const period = document.getElementById('kpiPeriod').value;
+                const res = await fetch('/api/staff_kpi?period=' + period, {credentials: 'same-origin'});
+                if (!res.ok) { cards.innerHTML = '<div style="padding:20px;color:red;">Server error: ' + res.status + ' ' + res.statusText + '</div>'; return; }
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch(e) { cards.innerHTML = '<div style="padding:20px;color:red;">Invalid response: ' + text.substring(0,200) + '</div>'; return; }
+                if (!data.success) { cards.innerHTML = '<div style="padding:20px;color:red;">Failed to load KPI</div>'; return; }
+
+                const kpi = data.kpi;
+                if (!kpi.length) { cards.innerHTML = '<div style="padding:20px;color:var(--text-muted);">No staff data found.</div>'; return; }
+
+                // Summary totals row
+                const totalBookings = kpi.reduce((s,k) => s + k.total_bookings, 0);
+                const totalInvoices = kpi.reduce((s,k) => s + k.total_invoices, 0);
+                const totalRevenue  = kpi.reduce((s,k) => s + k.total_revenue, 0);
+                const totalProfit   = kpi.reduce((s,k) => s + k.total_profit, 0);
+
+                let html = `
+                <div style="grid-column:1/-1; background:linear-gradient(135deg,#1e3a8a,#6366f1); border-radius:12px; padding:18px 24px; color:white; display:flex; gap:32px; flex-wrap:wrap; align-items:center;">
+                    <div><div style="font-size:11px;opacity:.8;">TOTAL BOOKINGS</div><div style="font-size:26px;font-weight:800;">${totalBookings}</div></div>
+                    <div><div style="font-size:11px;opacity:.8;">TOTAL INVOICES</div><div style="font-size:26px;font-weight:800;">${totalInvoices}</div></div>
+                    <div><div style="font-size:11px;opacity:.8;">TOTAL REVENUE</div><div style="font-size:26px;font-weight:800;">${fmt(totalRevenue)}</div></div>
+                    <div><div style="font-size:11px;opacity:.8;">TOTAL PROFIT</div><div style="font-size:26px;font-weight:800;">${fmt(totalProfit)}</div></div>
+                </div>`;
+
+                kpi.forEach(k => {
+                    const profitColor = k.total_profit >= 0 ? '#10b981' : '#ef4444';
+                    const statusBadge = k.status === 'Active'
+                        ? '<span style="background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;">Active</span>'
+                        : '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;">Inactive</span>';
+
+                    // Service breakdown pills
+                    const svcHtml = Object.entries(k.service_breakdown)
+                        .map(([svc, cnt]) => `<span style="background:#eff6ff;color:#1e40af;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;margin:2px;">${svc}: ${cnt}</span>`)
+                        .join('');
+
+                    html += `
+                    <div style="background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+                        <div style="background:var(--gradient);padding:14px 16px;color:white;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-weight:800;font-size:14px;">${k.name}</div>
+                                <div style="font-size:11px;opacity:.8;">${k.role} · @${k.username}</div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+                        <div style="padding:14px 16px;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                <div style="background:#f8fafc;border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:22px;font-weight:800;color:var(--primary);">${k.total_bookings}</div>
+                                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">BOOKINGS</div>
+                                </div>
+                                <div style="background:#f8fafc;border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:22px;font-weight:800;color:var(--secondary);">${k.total_invoices}</div>
+                                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">INVOICES</div>
+                                </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:16px;font-weight:800;color:#059669;">${fmt(k.total_revenue)}</div>
+                                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">REVENUE</div>
+                                </div>
+                                <div style="background:${k.total_profit >= 0 ? '#f0fdf4' : '#fef2f2'};border-radius:8px;padding:10px;text-align:center;">
+                                    <div style="font-size:16px;font-weight:800;color:${profitColor};">${fmt(k.total_profit)}</div>
+                                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">PROFIT</div>
+                                </div>
+                            </div>
+                            ${svcHtml ? `<div style="margin-top:6px;">${svcHtml}</div>` : ''}
+                        </div>
+                    </div>`;
+                });
+
+                cards.innerHTML = html;
+            } catch(e) {
+                cards.innerHTML = '<div style="padding:20px;color:red;">Error loading KPI: ' + e.message + '</div>';
+            }
+        }
+
+        function fmt(n) {
+            return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
+        }
+
+        document.addEventListener('DOMContentLoaded', loadKPI);
+        {% endif %}
+
+        function initUsers() { 
+            let activeSession = JSON.parse(sessionStorage.getItem('active_user'));
+            if(activeSession) document.getElementById('top_user_name').innerText = "👤 " + activeSession.name;
+        }
+
+        function toggleAdmin(checkbox) { 
+            var checkboxes = document.querySelectorAll('.perm-cb'); 
+            checkboxes.forEach(cb => { 
+                if (cb.value !== "Admin") { 
+                    cb.checked = checkbox.checked; 
+                    cb.disabled = checkbox.checked; 
+                } 
+            }); 
+        }
+
+        function openModal(id, isNew) { 
+            if(isNew) { 
+                currentEditRow = null; 
+                currentDbId = null;
+                document.getElementById("mdl_user_name").value = ""; 
+                document.getElementById("mdl_user_role").value = ""; 
+                document.getElementById("mdl_user_id").value = ""; 
+                document.getElementById("mdl_user_email").value = "";
+                document.getElementById("mdl_user_pwd").value = ""; 
+                document.getElementById("mdl_user_status").value = "Active";
+                document.querySelectorAll('.perm-cb').forEach(cb => { cb.checked = false; cb.disabled = false; });
+                document.getElementById("cb_admin").checked = false;
+                // Super Admin: company selector is needed for new users (editUser hides it, so restore here)
+                const wrapper = document.getElementById('companySelectWrapper');
+                if (wrapper) wrapper.style.display = '';
+                const companySel = document.getElementById('mdl_target_company');
+                if (companySel) companySel.value = '';
+            } 
+            document.getElementById(id).style.display = "block"; 
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+        function searchUserTable() { 
+            var input = document.getElementById("userSearch").value.toUpperCase(); 
+            var tr = document.getElementById("table_users").getElementsByTagName("tr"); 
+            for (var i = 1; i < tr.length; i++) { 
+                var td = tr[i].getElementsByTagName("td"); 
+                var match = false; 
+                for (var j = 1; j < td.length - 1; j++) { 
+                    if (td[j] && td[j].innerText.toUpperCase().indexOf(input) > -1) { 
+                        match = true; 
+                        break; 
+                    } 
+                } 
+                tr[i].style.display = match ? "" : "none"; 
+            } 
+        }
+        
+        async function saveUser() { 
+            var name = document.getElementById("mdl_user_name").value.trim(); 
+            var role = document.getElementById("mdl_user_role").value.trim(); 
+            var username = document.getElementById("mdl_user_id").value.trim(); 
+            var email = document.getElementById("mdl_user_email").value.trim(); 
+            var pwd = document.getElementById("mdl_user_pwd").value.trim(); 
+            var status = document.getElementById("mdl_user_status").value; 
+            
+            if (name === "" || role === "" || username === "") return alert("Name, Designation, and Username are mandatory!"); 
+            
+            var selectedPerms = []; 
+            var isAdmin = document.getElementById("cb_admin").checked;
+            if (isAdmin) { 
+                selectedPerms.push("Admin"); 
+            } else { 
+                document.querySelectorAll('.perm-cb:checked').forEach(cb => { 
+                    if (cb.value !== "Admin") selectedPerms.push(cb.value); 
+                }); 
+            }
+
+            if (!currentDbId && pwd === "") return alert("Password is required for a new user!");
+
+            const payload = {
+                db_id: currentDbId,
+                name: name,
+                role: role,
+                username: username,
+                email: email,
+                password: pwd,
+                status: status,
+                perms: selectedPerms
+            };
+
+            // Super Admin: include target company when creating a new user
+            const companySelect = document.getElementById('mdl_target_company');
+            if (!currentDbId && companySelect) {
+                if (!companySelect.value) {
+                    return alert('Please select a company for this user');
+                }
+                payload.target_company_id = companySelect.value;
+            }
+
+            try {
+                const res = await fetch('/api/save_staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Staff saved successfully!");
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (e) {
+                alert("Server error while saving staff.");
+            }
+        }
+
+        function togglePlanExpiry(select) {
+            const group = document.getElementById('trialDaysGroup');
+            if (select.value === 'enterprise') {
+                group.style.display = 'none';
+            } else {
+                group.style.display = '';
+            }
+        }
+
+        async function saveCompany(btn) {
+            const name = document.getElementById('newCompanyName').value.trim();
+            const email = document.getElementById('newCompanyEmail').value.trim();
+            const plan = document.getElementById('newCompanyPlan').value;
+            const trialDays = parseInt(document.getElementById('newCompanyTrialDays').value) || 14;
+            
+            if (!name) return alert('Company name is required');
+            
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Creating...';
+            
+            try {
+                const res = await fetch('/api/add_company', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        company_name: name,
+                        master_email: email,
+                        plan: plan,
+                        trial_days: trialDays
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert(`Company "${data.company_name}" created successfully!`);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            } catch (e) {
+                alert('Server error while creating company');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        function resetUserModal() {
+            currentDbId = null;
+            document.getElementById("mdl_user_name").value = "";
+            document.getElementById("mdl_user_role").value = "";
+            document.getElementById("mdl_user_id").value = "";
+            document.getElementById("mdl_user_pwd").value = "";
+            document.getElementById("mdl_user_status").value = "Active";
+            document.getElementById("cb_admin").checked = false;
+            document.querySelectorAll('.perm-cb').forEach(cb => {
+                cb.checked = false;
+                cb.disabled = false;
+            });
+            
+            // Show company select (super admin only — element exists)
+            const wrapper = document.getElementById('companySelectWrapper');
+            if (wrapper) {
+                wrapper.style.display = 'block';
+                document.getElementById('mdl_target_company').value = '';
+            }
+        }
+
+        function editUser(dbId, name, username, role, status, permsJson, email) {
+            console.log("Editing user:", {dbId, name, username, role, status, permsJson, email});
+            currentDbId = dbId;
+            let perms = [];
+            try { perms = JSON.parse(permsJson); } catch(e) { perms = []; }
+            
+            document.getElementById("mdl_user_name").value = name; 
+            document.getElementById("mdl_user_role").value = role; 
+            document.getElementById("mdl_user_id").value = username; 
+            document.getElementById("mdl_user_email").value = email || "";
+            document.getElementById("mdl_user_pwd").value = ""; 
+            document.getElementById("mdl_user_status").value = status;
+            
+            var isAdmin = perms.includes("Admin"); 
+            document.getElementById("cb_admin").checked = isAdmin;
+            document.querySelectorAll('.perm-cb').forEach(cb => { 
+                if (cb.value !== "Admin") { 
+                    cb.checked = isAdmin || perms.includes(cb.value); 
+                    cb.disabled = isAdmin; 
+                } 
+            });
+
+            const wrapper = document.getElementById('companySelectWrapper');
+            if (wrapper) wrapper.style.display = 'none';
+
+            openModal('userModal', false);
+        }
+
+        async function deleteUser(dbId, username) {
+            if(username === 'admin') return alert("You cannot delete the primary Super Admin account.");
+            if(confirm("Are you sure you want to delete this user profile? They will no longer be able to log in.")) {
+                try {
+                    const res = await fetch('/api/delete_staff/' + dbId, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                } catch (e) {
+                    alert("Server error while deleting staff.");
+                }
+            }
+        }
+
+        function exportUsers() { window.print(); } 
+    </script>
+    <script src="/static/loading.js"></script>
+</body>
+</html>

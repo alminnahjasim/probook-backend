@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login - Service Book ERP</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1e3a8a 0%, #5b6ee1 100%); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; color: #333; }
+        .auth-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        .auth-card h2 { color: #1e3a8a; margin-top: 0; margin-bottom: 25px; font-size: 24px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; color: #64748b; font-weight: bold; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        .btn-primary { width: 100%; background-color: #5b6ee1; color: white; padding: 14px; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .error-msg { color: white; background-color: #ef4444; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="auth-card">
+    <h2>Service Book ERP</h2>
+    
+    <div id="setupForm" class="hidden">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Welcome! Set up your Master Admin account.</p>
+        <div class="form-group"><label>Company Name</label><input type="text" id="regCompany" required></div>
+        <div class="form-group"><label>Email</label><input type="email" id="regEmail" required></div>
+        <div class="form-group"><label>Username</label><input type="text" id="regUser" required></div>
+        <div class="form-group"><label>Password</label><input type="password" id="regPass" required></div>
+        <button class="btn-primary" onclick="handleSetup()">Complete Setup</button>
+    </div>
+
+    <div id="loginForm" class="hidden">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;" id="loginSubtitle">Sign in to your dashboard</p>
+        {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+        <form method="POST" action="/login">
+            <div class="form-group"><label>Username</label><input type="text" name="username" required></div>
+            <div class="form-group"><label>Password</label><input type="password" name="password" required></div>
+            <button type="submit" class="btn-primary">Sign In</button>
+            <p style="margin-top:14px; margin-bottom:0;"><a href="#" onclick="showForgot(); return false;" style="color:#5b6ee1; font-size:13px; text-decoration:none;">Forgot password?</a></p>
+        </form>
+    </div>
+
+    <div id="forgotForm" class="hidden">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Reset your password</p>
+        <div id="forgotMsg"></div>
+        <div id="forgotStep1">
+            <div class="form-group"><label>Username or Email</label><input type="text" id="fp_identifier" required></div>
+            <button class="btn-primary" id="fp_request_btn" onclick="requestOtp()">Send Verification Code</button>
+        </div>
+        <div id="forgotStep2" class="hidden">
+            <div class="form-group"><label>Verification Code</label><input type="text" id="fp_otp" inputmode="numeric" autocomplete="one-time-code" required></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="fp_new" required></div>
+            <div class="form-group"><label>Confirm New Password</label><input type="password" id="fp_new2" required></div>
+            <button class="btn-primary" id="fp_reset_btn" onclick="submitReset()">Reset Password</button>
+        </div>
+        <p style="margin-top:14px; margin-bottom:0;"><a href="#" onclick="backToLogin(); return false;" style="color:#5b6ee1; font-size:13px; text-decoration:none;">← Back to sign in</a></p>
+    </div>
+    <div id="loadingState"><p style="color: #64748b; font-weight: bold;">Connecting...</p></div>
+</div>
+
+<script>
+    // Reaching the login screen means no one is authenticated here.
+    // Clear any cached company print settings (logo/header/notes) so the next
+    // user who logs in on this browser can never inherit a previous company's logo.
+    try { localStorage.removeItem('erp_print_settings'); } catch (e) {}
+    {% if error %}
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('loginForm').classList.remove('hidden');
+    {% else %}
+        checkSetup();
+    {% endif %}
+
+    async function checkSetup() {
+        try {
+            const res = await fetch('/api/check_setup');
+            const data = await res.json();
+            document.getElementById('loadingState').classList.add('hidden');
+            if (data.status === 'needs_setup') { document.getElementById('setupForm').classList.remove('hidden'); } 
+            else { 
+                document.getElementById('loginForm').classList.remove('hidden'); 
+                if(data.company_name) { document.getElementById('loginSubtitle').innerText = "Sign in to " + data.company_name; }
+            }
+        } catch (err) { document.getElementById('loadingState').innerHTML = "<span style='color:red;'>Connection error.</span>"; }
+    }
+
+    async function handleSetup() {
+        const company = document.getElementById('regCompany').value;
+        const email = document.getElementById('regEmail').value;
+        const user = document.getElementById('regUser').value;
+        const pass = document.getElementById('regPass').value;
+        if(!company || !email || !user || !pass) return;
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ company_name: company, email: email, username: user, password: pass })
+            });
+            const data = await res.json();
+            if(data.success) { window.location.href = '/'; } else { alert("Setup failed."); }
+        } catch (err) { alert("Server error."); }
+    }
+
+    function showForgot() {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('setupForm').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('forgotForm').classList.remove('hidden');
+        document.getElementById('forgotMsg').innerHTML = '';
+    }
+    function backToLogin() {
+        document.getElementById('forgotForm').classList.add('hidden');
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('forgotStep1').classList.remove('hidden');
+        document.getElementById('forgotStep2').classList.add('hidden');
+        document.getElementById('forgotMsg').innerHTML = '';
+    }
+    function fpMsg(text, ok) {
+        document.getElementById('forgotMsg').innerHTML =
+            '<div style="padding:10px; border-radius:6px; font-size:13px; margin-bottom:15px; color:' +
+            (ok ? '#065f46' : 'white') + '; background-color:' + (ok ? '#d1fae5' : '#ef4444') + ';">' + text + '</div>';
+    }
+    async function requestOtp() {
+        const id = document.getElementById('fp_identifier').value.trim();
+        if (!id) { fpMsg('Please enter your username or email.', false); return; }
+        const btn = document.getElementById('fp_request_btn');
+        btn.disabled = true; btn.innerText = 'Sending...';
+        try {
+            const res = await fetch('/api/forgot_password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: id }) });
+            const data = await res.json();
+            if (data.success) {
+                fpMsg(data.message || 'A verification code has been sent.', true);
+                document.getElementById('forgotStep1').classList.add('hidden');
+                document.getElementById('forgotStep2').classList.remove('hidden');
+            } else { fpMsg(data.message || 'Could not send a code.', false); }
+        } catch (e) { fpMsg('Server error. Please try again.', false); }
+        btn.disabled = false; btn.innerText = 'Send Verification Code';
+    }
+    async function submitReset() {
+        const id = document.getElementById('fp_identifier').value.trim();
+        const otp = document.getElementById('fp_otp').value.trim();
+        const np = document.getElementById('fp_new').value;
+        const np2 = document.getElementById('fp_new2').value;
+        if (!otp || !np) { fpMsg('Please enter the code and a new password.', false); return; }
+        if (np.length < 6) { fpMsg('Password must be at least 6 characters.', false); return; }
+        if (np !== np2) { fpMsg('Passwords do not match.', false); return; }
+        const btn = document.getElementById('fp_reset_btn');
+        btn.disabled = true; btn.innerText = 'Resetting...';
+        try {
+            const res = await fetch('/api/reset_password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: id, otp: otp, new_password: np }) });
+            const data = await res.json();
+            if (data.success) {
+                fpMsg((data.message || 'Password reset successful.') + ' Redirecting to sign in...', true);
+                setTimeout(backToLogin, 1800);
+            } else { fpMsg(data.message || 'Reset failed.', false); }
+        } catch (e) { fpMsg('Server error. Please try again.', false); }
+        btn.disabled = false; btn.innerText = 'Reset Password';
+    }
+</script>
+<script src="/static/loading.js"></script>
+</body>
+</html>
